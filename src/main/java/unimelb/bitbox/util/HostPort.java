@@ -32,8 +32,8 @@ public class HostPort {
 	}
 	
 	@Override
-    public boolean equals(Object o) { 
-        if (o == this) { 
+    public boolean equals(Object o) {
+        if (o == this) {
             return true; 
         } 
         if (!(o instanceof HostPort)) { 
