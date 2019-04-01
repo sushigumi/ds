@@ -2,3 +2,5 @@
 target
 .DS_Store
 bitbox.jar
+.gitignore~
+..gitignore.un~
