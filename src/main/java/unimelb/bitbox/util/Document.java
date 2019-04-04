@@ -146,3 +146,4 @@ public class Document {
 		return (boolean) obj.get(key);
 	}
 }
+// comment by yanli
