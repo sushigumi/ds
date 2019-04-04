@@ -4,3 +4,6 @@ target
 bitbox.jar
 .gitignore~
 ..gitignore.un~
+.classpath
+.project
+.settings
