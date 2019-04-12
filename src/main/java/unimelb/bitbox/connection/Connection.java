@@ -38,7 +38,7 @@ public class Connection {
 
         // Create the single thread executor to send messages based on a queue when it requires messages to be
         // sent
-        sender = Executors.newSingleThreadExecutor();
+        sender = Executors.newCachedThreadPool();
         sender.submit(MessageGenerator.generateHandshakeResponse(localHostPort, output));
     }
 
@@ -61,7 +61,7 @@ public class Connection {
         listener.start();
 
         // Create a single thread executor to send messages based on a queue when it requires messages to be sent
-        sender = Executors.newSingleThreadExecutor();
+        sender = Executors.newCachedThreadPool();
         sender.submit(MessageGenerator.genHandshakeRequest(localHostPort, output));
     }
 
