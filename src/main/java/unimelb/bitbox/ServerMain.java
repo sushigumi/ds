@@ -1,27 +1,31 @@
 package unimelb.bitbox;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
-import unimelb.bitbox.threads.ThreadController;
+import unimelb.bitbox.connection.ConnectionManager;
 import unimelb.bitbox.util.Configuration;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.FileSystemObserver;
 import unimelb.bitbox.util.FileSystemManager.FileSystemEvent;
+import unimelb.bitbox.util.HostPort;
 
 public class ServerMain implements FileSystemObserver {
 	private static Logger log = Logger.getLogger(ServerMain.class.getName());
 	protected FileSystemManager fileSystemManager;
 
-	private ServerSocket serverSocket;
+	private HostPort localHostPort;
 
 	public ServerMain() throws NumberFormatException, IOException, NoSuchAlgorithmException {
 		fileSystemManager=new FileSystemManager(Configuration.getConfigurationValue("path"),this);
+
+		this.localHostPort = new HostPort(Configuration.getConfigurationValue("advertisedName"),
+										  Integer.parseInt(Configuration.getConfigurationValue("port")));
 
 		start();
 	}
@@ -29,34 +33,50 @@ public class ServerMain implements FileSystemObserver {
 	@Override
 	public void processFileSystemEvent(FileSystemEvent fileSystemEvent) {
 		// TODO: process events
+		//Make a new thread
 	}
 
+	/**
+	 * Start the server
+	 */
 	private void start() {
-		// Initialise the socket
+		// Create a server socket
 		try {
-			serverSocket = new ServerSocket(Integer.parseInt(Configuration.getConfigurationValue("port")));
+			ServerSocket serverSocket = new ServerSocket(localHostPort.port);
 
-			while (true) {
-				Socket socket = serverSocket.accept();
+			// Connect to the peers
+			String peers[] = Configuration.getConfigurationValue("peers").split(",");
 
-				// Create a new thread
-				ThreadController.getInstance().newThread(socket);
-			}
+			for (String peer : peers) {
+				HostPort remoteHostPort = new HostPort(peer);
 
-		} catch (IOException e) {
-			// TODO: Send appropriate message
-			// Close the server socket if there exists an exception and server is open
-			if (serverSocket != null && !serverSocket.isClosed()) {
+				// Make a new socket to connect
 				try {
-					serverSocket.close();
-				} catch (IOException f) {
-					f.printStackTrace();
+					Socket socket = new Socket(remoteHostPort.host, remoteHostPort.port);
+
+					 ConnectionManager.addPeer(socket, localHostPort, remoteHostPort);
+				} catch (IOException e) {
+					log.info("Unable to connect to " + peer + ". Peer could be offline");
 				}
+
 			}
-			System.out.println("Error! Port is in use. Please use another port or try again.");
+
+
+			// Loop to accept incoming connections
+			try {
+				while (true) {
+					Socket socket = serverSocket.accept();
+
+					ConnectionManager.addPeer(socket, localHostPort);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} catch (IOException e) {
+			log.info("Failed to start server");
 			e.printStackTrace();
-			// TODO Check if right exit status
-			System.exit(-1);
+			System.exit(1);
 		}
+
 	}
 }
