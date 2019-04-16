@@ -3,64 +3,68 @@ package unimelb.bitbox.messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.HostPort;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.util.ArrayList;
 
 /**
- * Generates a runnable which is just sends the required message to the right peer
+ * Generates a string which is supposedly the right message to be sent to the peer
  */
 public class MessageGenerator {
+    // Messages to send back
+    private static final String CONNECTION_LIMIT_REACHED = "connection limit reached";
+
     private MessageGenerator() {
     }
 
     /**
-     * Genenrates a runnable that can send the handshake request to the specific peer
-     * @param thisPort
-     * @param output
+     * Generates a string that represents an invalid protocol
+     * @param message Message to be placed in the "message" field in the JSON string
      * @return
      */
-    public static Runnable genHandshakeRequest(HostPort thisPort, DataOutputStream output) {
+    public static String genInvalidProtocol(String message) {
         Document doc = new Document();
-        doc.append("command", MessageCommands.HANDSHAKE_REQUEST.getCommand());
-        doc.append("hostPort", thisPort.toDoc());
+        doc.append("command", MessageCommands.INVALID_PROTOCOL.getCommand());
+        doc.append("message", message);
 
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    output.writeUTF(doc.toJson());
-                } catch (IOException e) {
-                    // TODO:
-                    e.printStackTrace();
-                }
-            }
-        };
-
-        return runnable;
+        return doc.toJson();
     }
 
     /**
-     * Generates a runnable that can send a handshake response to the specific peer
-     * @param thisPort
-     * @param output
+     * Genenrates a string that represents the handshake request to a peer
+     * @param localPort
      * @return
      */
-    public static Runnable generateHandshakeResponse(HostPort thisPort, DataOutputStream output) {
+    public static String genHandshakeRequest(HostPort localPort) {
+        Document doc = new Document();
+        doc.append("command", MessageCommands.HANDSHAKE_REQUEST.getCommand());
+        doc.append("hostPort", localPort.toDoc());
+
+        return doc.toJson();
+    }
+
+    /**
+     * Generates a string that represents the handshake response to a peer
+     * @param localPort
+     * @return
+     */
+    public static String genHandshakeResponse(HostPort localPort) {
         Document doc = new Document();
         doc.append("command", MessageCommands.HANDSHAKE_RESPONSE.getCommand());
-        doc.append("hostPort", thisPort.toDoc());
+        doc.append("hostPort", localPort.toDoc());
 
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    output.writeUTF(doc.toJson());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
+        return doc.toJson();
+    }
 
-        return runnable;
+    /**
+     * Generates a string that represents a connection refused message
+     * @param peers
+     * @return
+     */
+    public static String genConnectionRefused(ArrayList<HostPort> peers) {
+        Document doc = new Document();
+        doc.append("command", MessageCommands.CONNECTION_REFUSED.getCommand());
+        doc.append("message", CONNECTION_LIMIT_REACHED);
+        doc.append("peers", peers);
+
+        return doc.toJson();
     }
 }
