@@ -54,7 +54,7 @@ public class ServerMain implements FileSystemObserver {
 				try {
 					Socket socket = new Socket(remoteHostPort.host, remoteHostPort.port);
 
-					 ConnectionManager.addPeer(socket, localHostPort, remoteHostPort);
+					 ConnectionManager.getInstance().addPeer(socket, localHostPort, remoteHostPort);
 				} catch (IOException e) {
 					log.info("Unable to connect to " + peer + ". Peer could be offline");
 				}
@@ -67,7 +67,7 @@ public class ServerMain implements FileSystemObserver {
 				while (true) {
 					Socket socket = serverSocket.accept();
 
-					ConnectionManager.addPeer(socket, localHostPort);
+					ConnectionManager.getInstance().addPeer(socket, localHostPort);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
