@@ -17,6 +17,5 @@ public class Peer
         Configuration.getConfiguration();
         
         new ServerMain();
-        
     }
 }
