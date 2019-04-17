@@ -4,6 +4,7 @@ import unimelb.bitbox.util.Configuration;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
+import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 
@@ -29,14 +30,27 @@ public class ConnectionManager {
     }
 
     /**
+     * For each peer in peers calls the method addPeer to set up a connection to each of the
+     * peers
+     * @param peers
+     */
+    public void addPeers(String[] peers, HostPort localHostPort) {
+        for (String peer : peers) {
+            HostPort remoteHostPort = new HostPort(peer);
+
+           addPeer(localHostPort, remoteHostPort);
+
+        }
+    }
+
+    /**
      * Add a peer when making a connection from this peer to another.
      * Local peer is the client
-     * @param socket
      * @param localHostPort
      * @param remoteHostPort
      */
-    public void addPeer(Socket socket, HostPort localHostPort, HostPort remoteHostPort) {
-        Connection connection = new Connection(socket, localHostPort, remoteHostPort);
+    public void addPeer(HostPort localHostPort, HostPort remoteHostPort) {
+        Connection connection = new OutgoingConnection(localHostPort, remoteHostPort);
     }
 
     /**
@@ -46,7 +60,7 @@ public class ConnectionManager {
      * @param localHostPort
      */
     public void addPeer(Socket socket, HostPort localHostPort) {
-        Connection connection = new Connection(socket, localHostPort);
+        Connection connection = new IncomingConnection(socket, localHostPort);
     }
 
     /**
@@ -54,26 +68,28 @@ public class ConnectionManager {
      * @return true if there are still incoming connections available
      */
     public boolean isAnyFreeConnection() {
-        return nConnections <= MAXIMUM_CONNECTIONS;
+        if (nConnections >= MAXIMUM_CONNECTIONS) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     /**
      * Add a recently connected peer to the list of peers that this peer currently has
-     * @param peer
+     * @param remoteHostPort
      */
-    public void connectedPeer(HostPort peer, boolean isIncoming) {
-        peers.add(peer);
+    public void connectedPeer(HostPort remoteHostPort, boolean isIncoming) {
+        peers.add(remoteHostPort);
 
         // Add to the number of incoming connections if it is an incoming connection only
         if (isIncoming) {
             nConnections++;
         }
-
-        System.out.println(nConnections);
     }
 
-    public void disconnectPeer(HostPort peer) {
-        peers.remove(peer);
+    public void disconnectPeer(HostPort remoteHostPort) {
+        peers.remove(remoteHostPort);
     }
 
     public ArrayList<HostPort> getPeers(){
@@ -81,6 +97,6 @@ public class ConnectionManager {
     }
 
     public void processFileSystemEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
-
+        // Create runnable here
     }
 }

@@ -45,22 +45,9 @@ public class ServerMain implements FileSystemObserver {
 			ServerSocket serverSocket = new ServerSocket(localHostPort.port);
 
 			// Connect to the peers
-			String peers[] = Configuration.getConfigurationValue("peers").split(",");
+			String[] peers = Configuration.getConfigurationValue("peers").split(",");
 
-			for (String peer : peers) {
-				HostPort remoteHostPort = new HostPort(peer);
-
-				// Make a new socket to connect
-				try {
-					Socket socket = new Socket(remoteHostPort.host, remoteHostPort.port);
-
-					 ConnectionManager.getInstance().addPeer(socket, localHostPort, remoteHostPort);
-				} catch (IOException e) {
-					log.info("Unable to connect to " + peer + ". Peer could be offline");
-				}
-
-			}
-
+			ConnectionManager.getInstance().addPeers(peers, localHostPort);
 
 			// Loop to accept incoming connections
 			try {

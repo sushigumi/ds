@@ -22,7 +22,7 @@ public class MessageGenerator {
      */
     public static String genInvalidProtocol(String message) {
         Document doc = new Document();
-        doc.append("command", MessageCommands.INVALID_PROTOCOL.getCommand());
+        doc.append("command", Commands.INVALID_PROTOCOL.toString());
         doc.append("message", message);
 
         return doc.toJson();
@@ -35,7 +35,7 @@ public class MessageGenerator {
      */
     public static String genHandshakeRequest(HostPort localPort) {
         Document doc = new Document();
-        doc.append("command", MessageCommands.HANDSHAKE_REQUEST.getCommand());
+        doc.append("command", Commands.HANDSHAKE_REQUEST.toString());
         doc.append("hostPort", localPort.toDoc());
 
         return doc.toJson();
@@ -48,7 +48,7 @@ public class MessageGenerator {
      */
     public static String genHandshakeResponse(HostPort localPort) {
         Document doc = new Document();
-        doc.append("command", MessageCommands.HANDSHAKE_RESPONSE.getCommand());
+        doc.append("command", Commands.HANDSHAKE_RESPONSE.toString());
         doc.append("hostPort", localPort.toDoc());
 
         return doc.toJson();
@@ -60,10 +60,14 @@ public class MessageGenerator {
      * @return
      */
     public static String genConnectionRefused(ArrayList<HostPort> peers) {
+        ArrayList<Document> peersDoc = new ArrayList<> ();
+        for (HostPort peer : peers) {
+            peersDoc.add(peer.toDoc());
+        }
         Document doc = new Document();
-        doc.append("command", MessageCommands.CONNECTION_REFUSED.getCommand());
+        doc.append("command", Commands.CONNECTION_REFUSED.toString());
         doc.append("message", CONNECTION_LIMIT_REACHED);
-        doc.append("peers", peers);
+        doc.append("peers", peersDoc);
 
         return doc.toJson();
     }
