@@ -31,6 +31,7 @@ import org.json.simple.parser.ParseException;
  *
  */
 public class Document {
+
 	
 	protected JSONObject obj;
 	
