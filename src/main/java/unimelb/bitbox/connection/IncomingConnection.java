@@ -41,6 +41,7 @@ public class IncomingConnection extends Connection {
                     // else accept the connection
                     if (ConnectionManager.getInstance().isAnyFreeConnection()) {
                         sendMessage(MessageGenerator.genHandshakeResponse(localHostPort));
+                        listener.submit(new Listener());
 
                         // Increment the number of incoming connections in the Connection Manager
                         ConnectionManager.getInstance().connectedPeer(remoteHostPort, true);
