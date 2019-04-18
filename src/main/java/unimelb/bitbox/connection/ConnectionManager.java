@@ -16,6 +16,7 @@ public class ConnectionManager {
     private int nConnections;  // number of incoming connections currently active
 
     private ArrayList<HostPort> peers;
+    private ArrayList<Connection> peerConnections;
 
     private static ConnectionManager instance = new ConnectionManager();
 
@@ -27,6 +28,7 @@ public class ConnectionManager {
         MAXIMUM_CONNECTIONS = Integer.parseInt(Configuration.getConfigurationValue("maximumIncommingConnections"));
         peers = new ArrayList<>();
         nConnections = 0;
+        peerConnections = new ArrayList<>();
     }
 
     /**
@@ -51,6 +53,7 @@ public class ConnectionManager {
      */
     public void addPeer(HostPort localHostPort, HostPort remoteHostPort) {
         Connection connection = new OutgoingConnection(localHostPort, remoteHostPort);
+        peerConnections.add(connection);
     }
 
     /**
@@ -61,6 +64,7 @@ public class ConnectionManager {
      */
     public void addPeer(Socket socket, HostPort localHostPort) {
         Connection connection = new IncomingConnection(socket, localHostPort);
+        peerConnections.add(connection);
     }
 
     /**
