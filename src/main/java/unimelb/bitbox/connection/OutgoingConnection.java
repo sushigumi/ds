@@ -10,12 +10,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class OutgoingConnection extends Connection {
     private ArrayList<HostPort> toConnect;
 
-    public OutgoingConnection(HostPort localHostPort, HostPort remoteHostPort) {
-        super(localHostPort);
+    public OutgoingConnection(LinkedBlockingQueue<Runnable> queue, HostPort localHostPort, HostPort remoteHostPort) {
+        super(queue, localHostPort);
 
         this.toConnect = new ArrayList<>();
         this.toConnect.add(remoteHostPort);
