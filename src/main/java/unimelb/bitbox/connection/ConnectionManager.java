@@ -15,7 +15,8 @@ public class ConnectionManager {
     public final int MAXIMUM_CONNECTIONS;
     private int nConnections;  // number of incoming connections currently active
 
-    private ArrayList<HostPort> peers;
+    private ArrayList<HostPort> peerHostPorts;
+    private ArrayList<Connection> peers;
 
     private static ConnectionManager instance = new ConnectionManager();
 
@@ -25,6 +26,7 @@ public class ConnectionManager {
 
     private ConnectionManager() {
         MAXIMUM_CONNECTIONS = Integer.parseInt(Configuration.getConfigurationValue("maximumIncommingConnections"));
+        peerHostPorts = new ArrayList<>();
         peers = new ArrayList<>();
         nConnections = 0;
     }
@@ -38,7 +40,7 @@ public class ConnectionManager {
         for (String peer : peers) {
             HostPort remoteHostPort = new HostPort(peer);
 
-           addPeer(localHostPort, remoteHostPort);
+            addPeer(localHostPort, remoteHostPort);
 
         }
     }
@@ -51,6 +53,7 @@ public class ConnectionManager {
      */
     public void addPeer(HostPort localHostPort, HostPort remoteHostPort) {
         Connection connection = new OutgoingConnection(localHostPort, remoteHostPort);
+        peers.add(connection);
     }
 
     /**
@@ -61,6 +64,7 @@ public class ConnectionManager {
      */
     public void addPeer(Socket socket, HostPort localHostPort) {
         Connection connection = new IncomingConnection(socket, localHostPort);
+        peers.add(connection);
     }
 
     /**
@@ -80,7 +84,7 @@ public class ConnectionManager {
      * @param remoteHostPort
      */
     public void connectedPeer(HostPort remoteHostPort, boolean isIncoming) {
-        peers.add(remoteHostPort);
+        peerHostPorts.add(remoteHostPort);
 
         // Add to the number of incoming connections if it is an incoming connection only
         if (isIncoming) {
@@ -93,7 +97,7 @@ public class ConnectionManager {
     }
 
     public ArrayList<HostPort> getPeers(){
-        return peers;
+        return peerHostPorts;
     }
 
     public void processFileSystemEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
