@@ -28,10 +28,8 @@ public abstract class Connection {
 
     ExecutorService listener;
     ExecutorService sender;
-
-
-    private LinkedBlockingQueue<Runnable> queue;
-
+    ExecutorService background;
+    
     /**
      * Called when receiving a connection from another peer
      * Only when receiving a connection do we add to the counter of connections based on the
@@ -39,10 +37,9 @@ public abstract class Connection {
      * @param socket
      * @param localHostPort
      */
-    Connection(LinkedBlockingQueue<Runnable> queue, Socket socket, HostPort localHostPort) {
+    Connection(Socket socket, HostPort localHostPort) {
         this.socket = socket;
         this.localHostPort = localHostPort;
-        this.queue = queue;
 
         createWriterAndReader();
 
@@ -52,6 +49,7 @@ public abstract class Connection {
         // Create the single thread executor to send messages based on a queue when it requires messages to be
         // sent
         this.sender = Executors.newSingleThreadExecutor();
+        this.background = Executors.newSingleThreadExecutor();
     }
 
     /**
@@ -59,15 +57,15 @@ public abstract class Connection {
      * So this peer needs to send a handshake request to the other peer
      * @param localHostPort
      */
-    Connection(LinkedBlockingQueue<Runnable> queue, HostPort localHostPort) {
+    Connection(HostPort localHostPort) {
         this.localHostPort = localHostPort;
-        this.queue = queue;
 
         this.listener = Executors.newSingleThreadExecutor();
 
         // Create the single thread executor to send messages based on a queue when it requires messages to be
         // sent
         this.sender = Executors.newSingleThreadExecutor();
+        this.background = Executors.newSingleThreadExecutor();
     }
 
     void createWriterAndReader() {

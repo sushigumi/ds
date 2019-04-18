@@ -12,8 +12,8 @@ import java.net.Socket;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class IncomingConnection extends Connection {
-    public IncomingConnection(LinkedBlockingQueue<Runnable> queue, Socket socket, HostPort localHostPort) {
-        super(queue, socket, localHostPort);
+    public IncomingConnection(Socket socket, HostPort localHostPort) {
+        super(socket, localHostPort);
 
         // Submit a Handshake runnable to the listener
         listener.submit(new Handshake(output));
