@@ -1,15 +1,13 @@
 package unimelb.bitbox.connection;
 
-import unimelb.bitbox.messages.Commands;
-import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.HostPort;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Represents a TCP connection between two peers.
@@ -30,7 +28,9 @@ public abstract class Connection {
 
     ExecutorService listener;
     ExecutorService sender;
-    ExecutorService background;
+
+
+    private LinkedBlockingQueue<Runnable> queue;
 
     /**
      * Called when receiving a connection from another peer
@@ -39,9 +39,10 @@ public abstract class Connection {
      * @param socket
      * @param localHostPort
      */
-    Connection(Socket socket, HostPort localHostPort) {
+    Connection(LinkedBlockingQueue<Runnable> queue, Socket socket, HostPort localHostPort) {
         this.socket = socket;
         this.localHostPort = localHostPort;
+        this.queue = queue;
 
         createWriterAndReader();
 
@@ -50,7 +51,7 @@ public abstract class Connection {
 
         // Create the single thread executor to send messages based on a queue when it requires messages to be
         // sent
-        background = Executors.newSingleThreadExecutor();
+        this.sender = Executors.newSingleThreadExecutor();
     }
 
     /**
@@ -58,12 +59,15 @@ public abstract class Connection {
      * So this peer needs to send a handshake request to the other peer
      * @param localHostPort
      */
-    Connection(HostPort localHostPort) {
+    Connection(LinkedBlockingQueue<Runnable> queue, HostPort localHostPort) {
         this.localHostPort = localHostPort;
+        this.queue = queue;
 
         this.listener = Executors.newSingleThreadExecutor();
+
+        // Create the single thread executor to send messages based on a queue when it requires messages to be
+        // sent
         this.sender = Executors.newSingleThreadExecutor();
-        background = Executors.newSingleThreadExecutor();
     }
 
     void createWriterAndReader() {
