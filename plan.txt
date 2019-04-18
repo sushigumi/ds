@@ -1,0 +1,27 @@
+Project Plan
+
+We have made meetings every Thursday for the past 3 weeks.
+In the first week 28/3, we discussed the assignment and get a brief picture about 
+the whole assignment.
+In the second week 4/4, we started the assignment and set up a git repository on 
+github.com and assigned a few tasks to everyone.
+In the third week 11/4, we assign more tasks to everybody and we plan to
+complete project the next two weeks.
+
+We split the tasks equally and so each person handles equal parts of message 
+sending. And we plan to discuss which model to be used to implement the server
+and peer loop. 
+One person will be handling INVALID_PROTOCOL
+• CONNECTION_REFUSED
+The other will be handling HANDSHAKE_REQUEST, HANDSHAKE_RESPONSE
+• FILE_CREATE_REQUEST, FILE_CREATE_RESPONSE
+Another will be handling FILE_DELETE_REQUEST, FILE_DELETE_RESPONSE
+• FILE_MODIFY_REQUEST, FILE_MODIFY_RESPONSE
+The last will be handling DIRECTORY_CREATE_REQUEST, DIRECTORY_CREATE_RESPONSE
+• DIRECTORY_DELETE_REQUEST, DIRECTORY_DELETE_RESPONSE
+• FILE_BYTES_REQUEST, FILE_BYTES_RESPONSE
+
+And the server we plan to do it togheter. 
+
+We plan to write the report in the last week and this will give us enough time
+to finish the project and submit.
