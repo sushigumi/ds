@@ -29,6 +29,7 @@ public abstract class Connection {
     DataInputStream input;
 
     ExecutorService listener;
+    ExecutorService sender;
     ExecutorService background;
 
     /**
@@ -45,10 +46,11 @@ public abstract class Connection {
         createWriterAndReader();
 
         this.listener = Executors.newSingleThreadExecutor();
+        this.sender = Executors.newSingleThreadExecutor();
 
         // Create the single thread executor to send messages based on a queue when it requires messages to be
         // sent
-        background = Executors.newSingleThreadExecutor();
+        this.background = Executors.newSingleThreadExecutor();
     }
 
     /**
@@ -60,7 +62,8 @@ public abstract class Connection {
         this.localHostPort = localHostPort;
 
         this.listener = Executors.newSingleThreadExecutor();
-        background = Executors.newSingleThreadExecutor();
+        this.sender = Executors.newSingleThreadExecutor();
+        this.background = Executors.newSingleThreadExecutor();
     }
 
     void createWriterAndReader() {

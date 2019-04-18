@@ -92,8 +92,9 @@ public class ConnectionManager {
         }
     }
 
+    // TODO need to disconnect the connection Arraylist as well
     public void disconnectPeer(HostPort remoteHostPort) {
-        peers.remove(remoteHostPort);
+        peerHostPorts.remove(remoteHostPort);
     }
 
     public ArrayList<HostPort> getPeers(){
