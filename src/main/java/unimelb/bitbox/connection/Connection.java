@@ -75,4 +75,22 @@ public abstract class Connection {
             }
         }
     }
+
+    class Listener implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                while (true) {
+                    String in = input.readUTF();
+
+                    Document doc = Document.parse(in);
+
+                    System.out.println(in);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
