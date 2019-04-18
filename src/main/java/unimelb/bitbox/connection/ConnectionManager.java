@@ -7,6 +7,7 @@ import unimelb.bitbox.util.HostPort;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Handles connections and is a singleton
@@ -36,11 +37,11 @@ public class ConnectionManager {
      * peers
      * @param peers
      */
-    public void addPeers(String[] peers, HostPort localHostPort) {
+    public void addPeers(LinkedBlockingQueue<Runnable> queue, String[] peers, HostPort localHostPort) {
         for (String peer : peers) {
             HostPort remoteHostPort = new HostPort(peer);
 
-            addPeer(localHostPort, remoteHostPort);
+            addPeer(queue, localHostPort, remoteHostPort);
 
         }
     }
@@ -51,8 +52,8 @@ public class ConnectionManager {
      * @param localHostPort
      * @param remoteHostPort
      */
-    public void addPeer(HostPort localHostPort, HostPort remoteHostPort) {
-        Connection connection = new OutgoingConnection(localHostPort, remoteHostPort);
+    public void addPeer(LinkedBlockingQueue<Runnable> queue, HostPort localHostPort, HostPort remoteHostPort) {
+        Connection connection = new OutgoingConnection(queue, localHostPort, remoteHostPort);
         peers.add(connection);
     }
 
@@ -62,8 +63,8 @@ public class ConnectionManager {
      * @param socket
      * @param localHostPort
      */
-    public void addPeer(Socket socket, HostPort localHostPort) {
-        Connection connection = new IncomingConnection(socket, localHostPort);
+    public void addPeer(LinkedBlockingQueue<Runnable> queue, Socket socket, HostPort localHostPort) {
+        Connection connection = new IncomingConnection(queue, socket, localHostPort);
         peers.add(connection);
     }
 

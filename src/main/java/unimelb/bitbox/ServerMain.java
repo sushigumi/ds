@@ -4,7 +4,9 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.*;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import unimelb.bitbox.connection.ConnectionManager;
@@ -20,6 +22,9 @@ public class ServerMain implements FileSystemObserver {
 
 	private HostPort localHostPort;
 
+	private ThreadPoolExecutor backgroundPool;
+	private LinkedBlockingQueue<Runnable> queue;
+
 	public ServerMain() throws NumberFormatException, IOException, NoSuchAlgorithmException {
 		fileSystemManager=new FileSystemManager(Configuration.getConfigurationValue("path"),this);
 
@@ -27,6 +32,10 @@ public class ServerMain implements FileSystemObserver {
 										  Integer.parseInt(Configuration.getConfigurationValue("port")));
 
 		start();
+
+		// Initialise the thread pool
+		queue = new LinkedBlockingQueue<>();
+		backgroundPool = new ThreadPoolExecutor(10, 15, 1000, TimeUnit.SECONDS, queue);
 	}
 
 	@Override
@@ -46,14 +55,14 @@ public class ServerMain implements FileSystemObserver {
 			// Connect to the peers
 			String[] peers = Configuration.getConfigurationValue("peers").split(",");
 
-			ConnectionManager.getInstance().addPeers(peers, localHostPort);
+			ConnectionManager.getInstance().addPeers(queue, peers, localHostPort);
 
 			// Loop to accept incoming connections
 			try {
 				while (true) {
 					Socket socket = serverSocket.accept();
 
-					ConnectionManager.getInstance().addPeer(socket, localHostPort);
+					ConnectionManager.getInstance().addPeer(queue, socket, localHostPort);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
