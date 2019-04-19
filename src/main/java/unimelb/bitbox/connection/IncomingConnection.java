@@ -10,7 +10,6 @@ import unimelb.bitbox.util.HostPort;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class IncomingConnection extends Connection {
     public IncomingConnection(FileSystemManager fileSystemManager, Socket socket, HostPort localHostPort) {
@@ -47,6 +46,9 @@ public class IncomingConnection extends Connection {
 
                         // Increment the number of incoming connections in the Connection Manager
                         ConnectionManager.getInstance().connectedPeer(remoteHostPort, true);
+
+                        // TODO Call generate sync events here and sent appropriate messages
+                        initSyncPeers();
                     } else {
                         // Send a CONNECTION_REFUSED message here
                         sendMessage(MessageGenerator.genConnectionRefused(ConnectionManager.getInstance().getPeers()));

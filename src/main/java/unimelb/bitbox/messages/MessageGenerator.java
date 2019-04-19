@@ -88,8 +88,8 @@ public class MessageGenerator {
         int blockSize = Integer.parseInt(Configuration.getConfigurationValue("blockSize"));
 
         ArrayList<String> messages = new ArrayList<>();
-        long fileSize = Integer.parseInt(fileDescriptor.getString("fileSize"));
-        for (int i = 0; i < fileSize; i += blockSize) {
+        long fileSize = fileDescriptor.getLong("fileSize");
+        for (long i = 0; i <= fileSize; i += blockSize) {
             Document doc = new Document();
             doc.append("command", Commands.FILE_BYTES_REQUEST.toString());
             doc.append("fileDescriptor", fileDescriptor);

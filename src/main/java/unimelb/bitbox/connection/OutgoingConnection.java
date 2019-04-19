@@ -11,7 +11,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class OutgoingConnection extends Connection {
     private ArrayList<HostPort> toConnect;
@@ -59,6 +58,7 @@ public class OutgoingConnection extends Connection {
                         ConnectionManager.getInstance().connectedPeer(remoteHostPort, false);
                         listener.submit(new Listener());
                         toConnect.clear(); // Clear to connect since already connected
+                        initSyncPeers();
                         return;
                     }
                     // Connection refused
