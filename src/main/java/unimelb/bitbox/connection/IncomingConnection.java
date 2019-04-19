@@ -4,6 +4,7 @@ import unimelb.bitbox.messages.Commands;
 import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
+import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.io.DataOutputStream;
@@ -12,8 +13,8 @@ import java.net.Socket;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class IncomingConnection extends Connection {
-    public IncomingConnection(Socket socket, HostPort localHostPort) {
-        super(socket, localHostPort);
+    public IncomingConnection(FileSystemManager fileSystemManager, Socket socket, HostPort localHostPort) {
+        super(fileSystemManager, socket, localHostPort);
 
         // Submit a Handshake runnable to the listener
         listener.submit(new Handshake(output));

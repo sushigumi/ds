@@ -48,14 +48,14 @@ public class ServerMain implements FileSystemObserver {
 			// Connect to the peers
 			String[] peers = Configuration.getConfigurationValue("peers").split(",");
 
-			ConnectionManager.getInstance().addPeers(peers, localHostPort);
+			ConnectionManager.getInstance().addPeers(fileSystemManager, peers, localHostPort);
 
 			// Loop to accept incoming connections
 			try {
 				while (true) {
 					Socket socket = serverSocket.accept();
 
-					ConnectionManager.getInstance().addPeer(socket, localHostPort);
+					ConnectionManager.getInstance().addPeer(fileSystemManager, socket, localHostPort);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
