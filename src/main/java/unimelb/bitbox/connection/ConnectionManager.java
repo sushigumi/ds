@@ -37,11 +37,11 @@ public class ConnectionManager {
      * peers
      * @param peers
      */
-    public void addPeers(String[] peers, HostPort localHostPort) {
+    public void addPeers(FileSystemManager fileSystemManager, String[] peers, HostPort localHostPort) {
         for (String peer : peers) {
             HostPort remoteHostPort = new HostPort(peer);
 
-            addPeer(localHostPort, remoteHostPort);
+            addPeer(fileSystemManager, localHostPort, remoteHostPort);
 
         }
     }
@@ -53,8 +53,8 @@ public class ConnectionManager {
      * @param localHostPort
      * @param remoteHostPort
      */
-    public void addPeer(HostPort localHostPort, HostPort remoteHostPort) {
-        Connection connection = new OutgoingConnection(localHostPort, remoteHostPort);
+    public void addPeer(FileSystemManager fileSystemManager, HostPort localHostPort, HostPort remoteHostPort) {
+        Connection connection = new OutgoingConnection(fileSystemManager, localHostPort, remoteHostPort);
         peers.add(connection);
 
     }
@@ -65,8 +65,8 @@ public class ConnectionManager {
      * @param socket
      * @param localHostPort
      */
-    public void addPeer(Socket socket, HostPort localHostPort) {
-        Connection connection = new IncomingConnection(socket, localHostPort);
+    public void addPeer(FileSystemManager fileSystemManager, Socket socket, HostPort localHostPort) {
+        Connection connection = new IncomingConnection(fileSystemManager, socket, localHostPort);
         peers.add(connection);
     }
 
