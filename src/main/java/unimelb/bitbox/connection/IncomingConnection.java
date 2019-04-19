@@ -1,6 +1,6 @@
 package unimelb.bitbox.connection;
 
-import unimelb.bitbox.messages.Commands;
+import unimelb.bitbox.messages.Command;
 import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
@@ -36,7 +36,7 @@ public class IncomingConnection extends Connection {
                 String command = message.getString("command");
 
                 // If it is a HANDSHAKE_REQUEST then send a HANDSHAKE_RESPONSE, else send an INVALID_PROTOCOL
-                if (command.equals(Commands.HANDSHAKE_REQUEST.toString())) {
+                if (command.equals(Command.HANDSHAKE_REQUEST.toString())) {
                     HostPort remoteHostPort = new HostPort((Document)message.get("hostPort"));
                     // If the maximum number of incoming connections has been reached, reject the connection
                     // else accept the connection

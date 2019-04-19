@@ -1,6 +1,6 @@
 package unimelb.bitbox.messages;
 
-public enum Commands {
+public enum Command {
     INVALID_PROTOCOL("INVALID PROTOCOL"),
     CONNECTION_REFUSED("CONNECTION REFUSED"),
     HANDSHAKE_REQUEST("HANDSHAKE REQUEST"),
@@ -19,11 +19,21 @@ public enum Commands {
     DIRECTORY_DELETE_RESPONSE("DIRECTORY DELETE RESPONSE");
 
     private String command;
-    Commands(String command) {
+    Command(String command) {
         this.command = command;
     }
 
     public String toString() {
         return command;
+    }
+
+    /**
+     * Returns a Command enum based on its String representation
+     * @param val String representation of the enum
+     * @return
+     */
+    public static Command fromString(String val) {
+        String enumRep = val.replace(' ', '_');
+        return valueOf(enumRep);
     }
 }
