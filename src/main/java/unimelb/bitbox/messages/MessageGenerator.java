@@ -7,6 +7,7 @@ import unimelb.bitbox.util.HostPort;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -28,7 +29,7 @@ public class MessageGenerator {
      */
     public static String genInvalidProtocol(String message) {
         Document doc = new Document();
-        doc.append("command", Commands.INVALID_PROTOCOL.toString());
+        doc.append("command", Command.INVALID_PROTOCOL.toString());
         doc.append("message", message);
 
         return doc.toJson();
@@ -41,7 +42,7 @@ public class MessageGenerator {
      */
     public static String genHandshakeRequest(HostPort localPort) {
         Document doc = new Document();
-        doc.append("command", Commands.HANDSHAKE_REQUEST.toString());
+        doc.append("command", Command.HANDSHAKE_REQUEST.toString());
         doc.append("hostPort", localPort.toDoc());
 
         return doc.toJson();
@@ -54,7 +55,7 @@ public class MessageGenerator {
      */
     public static String genHandshakeResponse(HostPort localPort) {
         Document doc = new Document();
-        doc.append("command", Commands.HANDSHAKE_RESPONSE.toString());
+        doc.append("command", Command.HANDSHAKE_RESPONSE.toString());
         doc.append("hostPort", localPort.toDoc());
 
         return doc.toJson();
@@ -71,7 +72,7 @@ public class MessageGenerator {
             peersDoc.add(peer.toDoc());
         }
         Document doc = new Document();
-        doc.append("command", Commands.CONNECTION_REFUSED.toString());
+        doc.append("command", Command.CONNECTION_REFUSED.toString());
         doc.append("message", CONNECTION_LIMIT_REACHED);
         doc.append("peers", peersDoc);
 
@@ -91,7 +92,7 @@ public class MessageGenerator {
         long fileSize = fileDescriptor.getLong("fileSize");
         for (long i = 0; i <= fileSize; i += blockSize) {
             Document doc = new Document();
-            doc.append("command", Commands.FILE_BYTES_REQUEST.toString());
+            doc.append("command", Command.FILE_BYTES_REQUEST.toString());
             doc.append("fileDescriptor", fileDescriptor);
             doc.append("pathName", pathName);
             doc.append("position", i);
@@ -113,7 +114,7 @@ public class MessageGenerator {
 //
 //        for (int i = 0; i < fileSystemEvent.fileDescriptor.fileSize; i += blockSize) {
 //            Document doc = new Document();
-//            doc.append("command", Commands.FILE_BYTES_REQUEST.toString());
+//            doc.append("command", Command.FILE_BYTES_REQUEST.toString());
 //            doc.append("fileDescriptor", fileSystemEvent.fileDescriptor.toDoc());
 //            doc.append("pathName", fileSystemEvent.pathName);
 //            doc.append("position", i);
@@ -145,7 +146,7 @@ public class MessageGenerator {
         long blockSize = Long.parseLong(Configuration.getConfigurationValue("blockSize"));
 
         Document doc = new Document();
-        doc.append("command", Commands.FILE_BYTES_REQUEST.toString());
+        doc.append("command", Command.FILE_BYTES_REQUEST.toString());
         doc.append("fileDescriptor", fileDescriptor);
         doc.append("pathName", pathName);
         doc.append("position", position);
@@ -175,7 +176,7 @@ public class MessageGenerator {
 
 
         Document doc = new Document();
-        doc.append("command", Commands.FILE_BYTES_RESPONSE.toString());
+        doc.append("command", Command.FILE_BYTES_RESPONSE.toString());
         doc.append("fileDescriptor", fileDescriptor);
         doc.append("pathName", pathName);
         doc.append("position", position);
@@ -184,8 +185,13 @@ public class MessageGenerator {
             // If there exists the file then we can read it otherwise return failure
             ByteBuffer bytes = fileSystemManager.readFile(md5, position, length);
             if (bytes != null) {
-                ByteBuffer encodedBytes = Base64.getEncoder().encode(bytes);
-                doc.append("content", new String(encodedBytes.array()));
+                // Encode the bytes in base64, convert it to a byte[] so that can be converted to a
+                // string and sent
+                bytes.rewind();
+                byte[] bytesArray = new byte[bytes.remaining()];
+                bytes.get(bytesArray);
+                String encodedBytes = Base64.getEncoder().encodeToString(bytesArray);
+                doc.append("content", encodedBytes);
                 doc.append("message", "successful read");
                 doc.append("status", true);
             } else {

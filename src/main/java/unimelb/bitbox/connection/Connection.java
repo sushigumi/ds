@@ -1,8 +1,11 @@
 package unimelb.bitbox.connection;
 
-import unimelb.bitbox.messages.Commands;
+import unimelb.bitbox.messages.Command;
+import unimelb.bitbox.messages.InvalidProtocolType;
 import unimelb.bitbox.messages.MessageGenerator;
+import unimelb.bitbox.runnables.ConstructFile;
 import unimelb.bitbox.runnables.FileBytesResponse;
+import unimelb.bitbox.runnables.InvalidProtocol;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
@@ -35,6 +38,9 @@ public abstract class Connection {
     ExecutorService background;
 
     FileSystemManager fileSystemManager;
+
+    //TODO might need hashmap here to count the number of files needed to receive if not done in one sitting
+    //TODO updating while bytes response comes in
 
     /**
      * Called when receiving a connection from another peer
@@ -129,11 +135,22 @@ public abstract class Connection {
                     String in = input.readUTF();
 
                     Document doc = Document.parse(in);
+                    System.out.println("Received: " + doc.toJson());
 
-                    Commands command = Commands.valueOf(doc.getString("command"));
+                    Command command = Command.fromString(doc.getString("command"));
                     // TODO switch here
+                    switch (command) {
+                        case FILE_BYTES_REQUEST:
+                            background.submit(new FileBytesResponse(output, fileSystemManager, doc));
+                            break;
 
-                    System.out.println(in);
+                        case FILE_BYTES_RESPONSE:
+                            background.submit(new ConstructFile(output, fileSystemManager, doc));
+                            break;
+
+                        default:
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.INVALID_COMMAND));
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
