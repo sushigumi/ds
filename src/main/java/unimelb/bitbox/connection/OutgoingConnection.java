@@ -4,6 +4,7 @@ import unimelb.bitbox.messages.Commands;
 import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
+import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.io.DataOutputStream;
@@ -15,8 +16,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class OutgoingConnection extends Connection {
     private ArrayList<HostPort> toConnect;
 
-    public OutgoingConnection(HostPort localHostPort, HostPort remoteHostPort) {
-        super(localHostPort);
+    public OutgoingConnection(FileSystemManager fileSystemManager, HostPort localHostPort, HostPort remoteHostPort) {
+        super(fileSystemManager, localHostPort);
 
         this.toConnect = new ArrayList<>();
         this.toConnect.add(remoteHostPort);

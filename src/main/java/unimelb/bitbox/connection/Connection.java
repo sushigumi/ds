@@ -2,6 +2,7 @@ package unimelb.bitbox.connection;
 
 import unimelb.bitbox.messages.Commands;
 import unimelb.bitbox.util.Document;
+import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.io.*;
@@ -30,6 +31,8 @@ public abstract class Connection {
     ExecutorService listener;
     ExecutorService sender;
     ExecutorService background;
+
+    private FileSystemManager fileSystemManager;
     
     /**
      * Called when receiving a connection from another peer
@@ -38,9 +41,10 @@ public abstract class Connection {
      * @param socket
      * @param localHostPort
      */
-    Connection(Socket socket, HostPort localHostPort) {
+    Connection(FileSystemManager fileSystemManager, Socket socket, HostPort localHostPort) {
         this.socket = socket;
         this.localHostPort = localHostPort;
+        this.fileSystemManager = fileSystemManager;
 
         createWriterAndReader();
 
@@ -58,8 +62,9 @@ public abstract class Connection {
      * So this peer needs to send a handshake request to the other peer
      * @param localHostPort
      */
-    Connection(HostPort localHostPort) {
+    Connection(FileSystemManager fileSystemManager, HostPort localHostPort) {
         this.localHostPort = localHostPort;
+        this.fileSystemManager = fileSystemManager;
 
         this.listener = Executors.newSingleThreadExecutor();
 
