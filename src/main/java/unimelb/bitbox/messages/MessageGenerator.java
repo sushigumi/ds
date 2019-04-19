@@ -5,7 +5,9 @@ import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Base64;
 
@@ -141,7 +143,16 @@ public class MessageGenerator {
      */
 
 
-
+    /**
+     * Generates a string which represents a file bytes response message which sends the correct bytes of
+     * a file from position and of length 'length' to the peer who sent the matching file bytes request
+     * @param fileSystemManager Reference to file system manager
+     * @param fileDescriptor File descriptor obtained from the file bytes request message
+     * @param pathName Path name of file relative to share directory
+     * @param position Position of bytes to start reading from
+     * @param length Number of bytes to read
+     * @return File Bytes Response message
+     */
     public static String genFileBytesResponse(FileSystemManager fileSystemManager,
                                               Document fileDescriptor,
                                               String pathName,
@@ -149,8 +160,7 @@ public class MessageGenerator {
                                               long length) {
 
         String md5 = fileDescriptor.getString("md5");
-        ByteBuffer bytes = fileSystemManager.readFile(md5, position, length);
-        ByteBuffer encodedBytes = Base64.getEncoder().encode(bytes);
+
 
         Document doc = new Document();
         doc.append("command", Commands.FILE_BYTES_RESPONSE.toString());
@@ -158,14 +168,34 @@ public class MessageGenerator {
         doc.append("pathName", pathName);
         doc.append("position", position);
         doc.append("length", length);
-        if (bytes != null) {
-            doc.append("content", new String(encodedBytes.array()));
-            doc.append("message", "successful read");
-            doc.append("status", true);
-        } else {
+        try {
+            // If there exists the file then we can read it otherwise return failure
+            ByteBuffer bytes = fileSystemManager.readFile(md5, position, length);
+            if (bytes != null) {
+                ByteBuffer encodedBytes = Base64.getEncoder().encode(bytes);
+                doc.append("content", new String(encodedBytes.array()));
+                doc.append("message", "successful read");
+                doc.append("status", true);
+            } else {
+                doc.append("content", "");
+                doc.append("message", "unsuccessful read");
+                doc.append("status", false);
+            }
+        }
+        // Return appropriate errors when exceptions are caught
+        // Error accessing file system
+        catch (IOException e) {
             doc.append("content", "");
-            doc.append("message", "unsuccessful read");
+            doc.append("message", "error accessing file system");
             doc.append("status", false);
         }
+        // md5 hashing algorithm is not found in the system
+        catch (NoSuchAlgorithmException e) {
+            doc.append("content", "");
+            doc.append("message", "md5 hash algorithm is unavailable");
+            doc.append("status", false);
+        }
+
+        return doc.toJson();
     }
 }

@@ -1,5 +1,6 @@
 package unimelb.bitbox.connection;
 
+import unimelb.bitbox.messages.Commands;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.HostPort;
 
@@ -94,6 +95,9 @@ public abstract class Connection {
                     String in = input.readUTF();
 
                     Document doc = Document.parse(in);
+
+                    Commands command = Commands.valueOf(doc.getString("command"));
+                    // TODO switch here
 
                     System.out.println(in);
                 }
