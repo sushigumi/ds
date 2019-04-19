@@ -85,7 +85,7 @@ public class MessageGenerator {
      * @return
      */
     public static ArrayList<String> genFileBytesRequests(Document fileDescriptor, String pathName) {
-        int blockSize = Integer.parseInt(Configuration.getConfigurationValue("blockSize"));
+        long blockSize = Long.parseLong(Configuration.getConfigurationValue("blockSize"));
 
         ArrayList<String> messages = new ArrayList<>();
         long fileSize = fileDescriptor.getLong("fileSize");
@@ -130,17 +130,29 @@ public class MessageGenerator {
 //        return messages;
 //    }
 
+
     /**
-     * Generates a string which respresents a single file bytes request message which requests for bytes at
-     * a given position and of how long
+     * Generates a string which represents a single file bytes request message which requests for bytes at
+     * a given position and of a specific length
      * This method is usually invoked only when a peer has not received some bytes which have been previously
-     * requested and have been lost during transmission
-     * @param fileSystemManager Reference to File System Manager
-     * @param fileSystemEvent File System Event
-     * @param position Position of the bytes to start reading from
-     * @param length Length of the bytes to read (Dependent on FileBytesResponse sender)
+     * requested and have been lost during transmission.
+     * @param fileDescriptor File descriptor obtained from the previous File Bytes Response message
+     * @param pathName Path name of file to copy
+     * @param position Position of bytes to start reading from
      * @return
      */
+    public static String genFileBytesRequest(Document fileDescriptor, String pathName, long position) {
+        long blockSize = Long.parseLong(Configuration.getConfigurationValue("blockSize"));
+
+        Document doc = new Document();
+        doc.append("command", Commands.FILE_BYTES_REQUEST.toString());
+        doc.append("fileDescriptor", fileDescriptor);
+        doc.append("pathName", pathName);
+        doc.append("position", position);
+        doc.append("length", blockSize);
+
+        return doc.toJson();
+    }
 
 
     /**

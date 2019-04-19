@@ -2,7 +2,6 @@ package unimelb.bitbox.connection;
 
 import unimelb.bitbox.messages.Commands;
 import unimelb.bitbox.messages.MessageGenerator;
-import unimelb.bitbox.runnables.FileBytesRequest;
 import unimelb.bitbox.runnables.FileBytesResponse;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
@@ -13,7 +12,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Represents a TCP connection between two peers.
