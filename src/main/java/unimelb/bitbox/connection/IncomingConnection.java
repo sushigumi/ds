@@ -9,10 +9,11 @@ import unimelb.bitbox.util.HostPort;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class IncomingConnection extends Connection {
-    public IncomingConnection(Socket socket, HostPort localHostPort) {
-        super(socket, localHostPort);
+    public IncomingConnection(LinkedBlockingQueue<Runnable> queue, Socket socket, HostPort localHostPort) {
+        super(queue, socket, localHostPort);
 
         // Submit a Handshake runnable to the listener
         listener.submit(new Handshake(output));

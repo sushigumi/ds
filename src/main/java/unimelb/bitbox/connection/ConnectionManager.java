@@ -7,6 +7,7 @@ import unimelb.bitbox.util.HostPort;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Handles connections and is a singleton
@@ -15,7 +16,8 @@ public class ConnectionManager {
     public final int MAXIMUM_CONNECTIONS;
     private int nConnections;  // number of incoming connections currently active
 
-    private ArrayList<HostPort> peers;
+    private ArrayList<HostPort> peerHostPorts;
+    private ArrayList<Connection> peers;
 
     private static ConnectionManager instance = new ConnectionManager();
 
@@ -25,6 +27,7 @@ public class ConnectionManager {
 
     private ConnectionManager() {
         MAXIMUM_CONNECTIONS = Integer.parseInt(Configuration.getConfigurationValue("maximumIncommingConnections"));
+        peerHostPorts = new ArrayList<>();
         peers = new ArrayList<>();
         nConnections = 0;
     }
@@ -34,11 +37,11 @@ public class ConnectionManager {
      * peers
      * @param peers
      */
-    public void addPeers(String[] peers, HostPort localHostPort) {
+    public void addPeers(LinkedBlockingQueue<Runnable> queue, String[] peers, HostPort localHostPort) {
         for (String peer : peers) {
             HostPort remoteHostPort = new HostPort(peer);
 
-           addPeer(localHostPort, remoteHostPort);
+            addPeer(queue, localHostPort, remoteHostPort);
 
         }
     }
@@ -49,8 +52,9 @@ public class ConnectionManager {
      * @param localHostPort
      * @param remoteHostPort
      */
-    public void addPeer(HostPort localHostPort, HostPort remoteHostPort) {
-        Connection connection = new OutgoingConnection(localHostPort, remoteHostPort);
+    public void addPeer(LinkedBlockingQueue<Runnable> queue, HostPort localHostPort, HostPort remoteHostPort) {
+        Connection connection = new OutgoingConnection(queue, localHostPort, remoteHostPort);
+        peers.add(connection);
     }
 
     /**
@@ -59,8 +63,9 @@ public class ConnectionManager {
      * @param socket
      * @param localHostPort
      */
-    public void addPeer(Socket socket, HostPort localHostPort) {
-        Connection connection = new IncomingConnection(socket, localHostPort);
+    public void addPeer(LinkedBlockingQueue<Runnable> queue, Socket socket, HostPort localHostPort) {
+        Connection connection = new IncomingConnection(queue, socket, localHostPort);
+        peers.add(connection);
     }
 
     /**
@@ -80,7 +85,7 @@ public class ConnectionManager {
      * @param remoteHostPort
      */
     public void connectedPeer(HostPort remoteHostPort, boolean isIncoming) {
-        peers.add(remoteHostPort);
+        peerHostPorts.add(remoteHostPort);
 
         // Add to the number of incoming connections if it is an incoming connection only
         if (isIncoming) {
@@ -93,7 +98,7 @@ public class ConnectionManager {
     }
 
     public ArrayList<HostPort> getPeers(){
-        return peers;
+        return peerHostPorts;
     }
 
     public void processFileSystemEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
