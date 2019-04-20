@@ -37,11 +37,11 @@ public class ConnectionManager {
      * peers
      * @param peers
      */
-    public void addPeers(LinkedBlockingQueue<Runnable> queue, String[] peers, HostPort localHostPort) {
+    public void addPeers(FileSystemManager fileSystemManager, String[] peers, HostPort localHostPort) {
         for (String peer : peers) {
             HostPort remoteHostPort = new HostPort(peer);
 
-            addPeer(queue, localHostPort, remoteHostPort);
+            addPeer(fileSystemManager, localHostPort, remoteHostPort);
 
         }
     }
@@ -49,12 +49,14 @@ public class ConnectionManager {
     /**
      * Add a peer when making a connection from this peer to another.
      * Local peer is the client
+     * @param queue
      * @param localHostPort
      * @param remoteHostPort
      */
-    public void addPeer(LinkedBlockingQueue<Runnable> queue, HostPort localHostPort, HostPort remoteHostPort) {
-        Connection connection = new OutgoingConnection(queue, localHostPort, remoteHostPort);
+    public void addPeer(FileSystemManager fileSystemManager, HostPort localHostPort, HostPort remoteHostPort) {
+        Connection connection = new OutgoingConnection(fileSystemManager, localHostPort, remoteHostPort);
         peers.add(connection);
+
     }
 
     /**
@@ -63,8 +65,8 @@ public class ConnectionManager {
      * @param socket
      * @param localHostPort
      */
-    public void addPeer(LinkedBlockingQueue<Runnable> queue, Socket socket, HostPort localHostPort) {
-        Connection connection = new IncomingConnection(queue, socket, localHostPort);
+    public void addPeer(FileSystemManager fileSystemManager, Socket socket, HostPort localHostPort) {
+        Connection connection = new IncomingConnection(fileSystemManager, socket, localHostPort);
         peers.add(connection);
     }
 
@@ -93,8 +95,9 @@ public class ConnectionManager {
         }
     }
 
+    // TODO need to disconnect the connection Arraylist as well
     public void disconnectPeer(HostPort remoteHostPort) {
-        peers.remove(remoteHostPort);
+        peerHostPorts.remove(remoteHostPort);
     }
 
     public ArrayList<HostPort> getPeers(){

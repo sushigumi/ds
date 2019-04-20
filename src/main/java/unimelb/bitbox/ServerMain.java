@@ -22,9 +22,6 @@ public class ServerMain implements FileSystemObserver {
 
 	private HostPort localHostPort;
 
-	private ThreadPoolExecutor backgroundPool;
-	private LinkedBlockingQueue<Runnable> queue;
-
 	public ServerMain() throws NumberFormatException, IOException, NoSuchAlgorithmException {
 		fileSystemManager=new FileSystemManager(Configuration.getConfigurationValue("path"),this);
 
@@ -32,10 +29,6 @@ public class ServerMain implements FileSystemObserver {
 										  Integer.parseInt(Configuration.getConfigurationValue("port")));
 
 		start();
-
-		// Initialise the thread pool
-		queue = new LinkedBlockingQueue<>();
-		backgroundPool = new ThreadPoolExecutor(10, 15, 1000, TimeUnit.SECONDS, queue);
 	}
 
 	@Override
@@ -55,14 +48,14 @@ public class ServerMain implements FileSystemObserver {
 			// Connect to the peers
 			String[] peers = Configuration.getConfigurationValue("peers").split(",");
 
-			ConnectionManager.getInstance().addPeers(queue, peers, localHostPort);
+			ConnectionManager.getInstance().addPeers(fileSystemManager, peers, localHostPort);
 
 			// Loop to accept incoming connections
 			try {
 				while (true) {
 					Socket socket = serverSocket.accept();
 
-					ConnectionManager.getInstance().addPeer(queue, socket, localHostPort);
+					ConnectionManager.getInstance().addPeer(fileSystemManager, socket, localHostPort);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
