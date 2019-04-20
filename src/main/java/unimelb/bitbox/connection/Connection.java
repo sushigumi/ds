@@ -1,6 +1,7 @@
 package unimelb.bitbox.connection;
 
 import unimelb.bitbox.util.Document;
+import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.io.*;
@@ -28,9 +29,10 @@ public abstract class Connection {
 
     ExecutorService listener;
     ExecutorService sender;
+    ExecutorService background;
 
-    private LinkedBlockingQueue<Runnable> queue;
-
+    private FileSystemManager fileSystemManager;
+    
     /**
      * Called when receiving a connection from another peer
      * Only when receiving a connection do we add to the counter of connections based on the
@@ -38,18 +40,20 @@ public abstract class Connection {
      * @param socket
      * @param localHostPort
      */
-    Connection(LinkedBlockingQueue<Runnable> queue, Socket socket, HostPort localHostPort) {
+    Connection(FileSystemManager fileSystemManager, Socket socket, HostPort localHostPort) {
         this.socket = socket;
         this.localHostPort = localHostPort;
-        this.queue = queue;
+        this.fileSystemManager = fileSystemManager;
 
         createWriterAndReader();
 
         this.listener = Executors.newSingleThreadExecutor();
+        this.sender = Executors.newSingleThreadExecutor();
 
         // Create the single thread executor to send messages based on a queue when it requires messages to be
         // sent
         this.sender = Executors.newSingleThreadExecutor();
+        this.background = Executors.newSingleThreadExecutor();
     }
 
     /**
@@ -57,15 +61,16 @@ public abstract class Connection {
      * So this peer needs to send a handshake request to the other peer
      * @param localHostPort
      */
-    Connection(LinkedBlockingQueue<Runnable> queue, HostPort localHostPort) {
+    Connection(FileSystemManager fileSystemManager, HostPort localHostPort) {
         this.localHostPort = localHostPort;
-        this.queue = queue;
+        this.fileSystemManager = fileSystemManager;
 
         this.listener = Executors.newSingleThreadExecutor();
 
         // Create the single thread executor to send messages based on a queue when it requires messages to be
         // sent
         this.sender = Executors.newSingleThreadExecutor();
+        this.background = Executors.newSingleThreadExecutor();
     }
 
     void createWriterAndReader() {
@@ -79,6 +84,10 @@ public abstract class Connection {
                 e2.printStackTrace();
             }
         }
+    }
+
+    public void submitSender(Runnable runnable) {
+        sender.submit(runnable);
     }
 
     class Listener implements Runnable {
