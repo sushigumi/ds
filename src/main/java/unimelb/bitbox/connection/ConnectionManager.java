@@ -10,7 +10,7 @@ import java.util.ArrayList;
 /**
  * Handles connections and is a singleton
  */
-public class ConnectionManager {
+public class ConnectionManager implements ConnectionObserver {
     public final int MAXIMUM_CONNECTIONS;
     private int nConnections;  // number of incoming connections currently active
 
@@ -47,12 +47,12 @@ public class ConnectionManager {
     /**
      * Add a peer when making a connection from this peer to another.
      * Local peer is the client
-     * @param queue
      * @param localHostPort
      * @param remoteHostPort
      */
     public void addPeer(FileSystemManager fileSystemManager, HostPort localHostPort, HostPort remoteHostPort) {
         Connection connection = new OutgoingConnection(fileSystemManager, localHostPort, remoteHostPort);
+        connection.addConnectionObserver(this);
         peers.add(connection);
 
     }
@@ -65,6 +65,7 @@ public class ConnectionManager {
      */
     public void addPeer(FileSystemManager fileSystemManager, Socket socket, HostPort localHostPort) {
         Connection connection = new IncomingConnection(fileSystemManager, socket, localHostPort);
+        connection.addConnectionObserver(this);
         peers.add(connection);
     }
 
@@ -94,9 +95,6 @@ public class ConnectionManager {
     }
 
     // TODO need to disconnect the connection Arraylist as well
-    public void disconnectPeer(HostPort remoteHostPort) {
-        peerHostPorts.remove(remoteHostPort);
-    }
 
     public ArrayList<HostPort> getPeers(){
         return peerHostPorts;
@@ -104,15 +102,25 @@ public class ConnectionManager {
 
     public void processFileSystemEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
         // Create runnable here
-
-        /*
-        switch (fileSystemEvent.event){
-
-            case DIRECTORY_DELETE:
-                new DirectoryDeleteRequest(output, );
-
+        for (Connection connection: peers) {
+            connection.submitEvent(fileSystemEvent);
         }
-        */
+    }
 
+    @Override
+    public void closeConnection(HostPort remoteHostPort) {
+
+        // Get the index of the connection
+        peerHostPorts.remove(remoteHostPort);
+
+        // Remove connection
+        int i = 0;
+        for (Connection peer: peers) {
+            if (peer.remoteHostPort.equals(remoteHostPort)) {
+                break;
+            }
+            i++;
+        }
+        peers.remove(i);
     }
 }

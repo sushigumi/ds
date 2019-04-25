@@ -2,7 +2,9 @@ package unimelb.bitbox.eventprocess;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 
+import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
@@ -49,8 +51,13 @@ public class FileCreateResponse extends BaseRunnable
 				    doc.append("message", "file loader ready");
 				    doc.append("status", true);
 				    sendMessage(doc.toJson());
-				    if(!checkShortcut(pathName))
+				    if(!fileSystemManager.checkShortcut(pathName))
 				    {
+				    	   ArrayList<String> messages = MessageGenerator.genFileBytesRequests(fileDescriptor, pathName);
+
+				           for (String message : messages) {
+				               sendMessage(message);
+				           }
 				    	
 				    }
 				    

@@ -3,14 +3,14 @@ package unimelb.bitbox.connection;
 import unimelb.bitbox.runnables.DirectoryCreateResponse;
 import unimelb.bitbox.runnables.DirectoryDeleteRequest;
 import unimelb.bitbox.runnables.DirectoryDeleteResponse;
+import unimelb.bitbox.eventprocess.FileCreateRequest;
 import unimelb.bitbox.eventprocess.FileCreateResponse;
+import unimelb.bitbox.eventprocess.FileDeleteRequest;
 import unimelb.bitbox.eventprocess.FileDeleteResponse;
+import unimelb.bitbox.runnables.*;
 import unimelb.bitbox.messages.Command;
 import unimelb.bitbox.messages.InvalidProtocolType;
 import unimelb.bitbox.messages.MessageGenerator;
-import unimelb.bitbox.runnables.ConstructFile;
-import unimelb.bitbox.runnables.FileBytesResponse;
-import unimelb.bitbox.runnables.InvalidProtocol;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
@@ -34,6 +34,7 @@ public abstract class Connection {
     Socket socket; // Other peer's socket
 
     HostPort localHostPort;
+    HostPort remoteHostPort;
 
     DataOutputStream output;
     DataInputStream input;
@@ -43,6 +44,7 @@ public abstract class Connection {
     ExecutorService background;
 
     FileSystemManager fileSystemManager;
+    ConnectionObserver observer;
 
     //TODO might need hashmap here to count the number of files needed to receive if not done in one sitting
     //TODO updating while bytes response comes in
@@ -86,6 +88,14 @@ public abstract class Connection {
         this.background = Executors.newSingleThreadExecutor();
     }
 
+    void updateRemoteHostPort(HostPort remoteHostPort) {
+        this.remoteHostPort = remoteHostPort;
+    }
+
+    void addConnectionObserver(ConnectionObserver observer) {
+        this.observer = observer;
+    }
+
     void createWriterAndReader() {
         try {
             input = new DataInputStream(socket.getInputStream());
@@ -106,11 +116,30 @@ public abstract class Connection {
      */
     public void submitEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
         switch (fileSystemEvent.event) {
+            /*
             case FILE_CREATE:
                 String request = MessageGenerator.genFileBytesRequests(fileSystemEvent.fileDescriptor.toDoc(), fileSystemEvent.pathName).remove(0);
                 // TODO change to sending FILE_CREATE_REQUEST
                 sender.submit(new FileBytesResponse(output, fileSystemManager, Document.parse(request)));
                 break;
+                */
+
+            case FILE_CREATE:
+                sender.submit(new FileCreateRequest(output, fileSystemEvent));
+                break;
+            case FILE_DELETE:
+                sender.submit(new FileDeleteRequest(output,fileSystemEvent));
+                break;
+            case FILE_MODIFY:
+                sender.submit(new FileModifyRequest(output,fileSystemEvent));
+                break;
+            case DIRECTORY_CREATE:
+                sender.submit(new DirectoryCreateRequest(output, fileSystemEvent.pathName));
+                break;
+            case DIRECTORY_DELETE:
+                sender.submit(new DirectoryDeleteRequest(output, fileSystemEvent.pathName));
+                break;
+
         }
 
     }
@@ -128,8 +157,6 @@ public abstract class Connection {
             submitEvent(event);
         }
     }
-
-
 
     class Listener implements Runnable {
 
@@ -150,7 +177,7 @@ public abstract class Connection {
                     	    background.submit(new FileCreateResponse(output, doc, fileSystemManager));
                     	    break;
                     	    
-                        case FILE_CREATE_RESPONSE:
+                        case FILE_CREATE_RESPONSE:                        	
                         	break;
                    	
                         case FILE_DELETE_REQUEST:
@@ -161,6 +188,7 @@ public abstract class Connection {
                         	break;
                     	
                         case FILE_MODIFY_REQUEST:
+                        	//
                     	    break;
                                    
                         case FILE_MODIFY_RESPONSE:
@@ -192,8 +220,12 @@ public abstract class Connection {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.INVALID_COMMAND));
                     }
                 }
-            } catch (IOException e) {
+            }
+            // When the peer has closed the connection
+            catch (IOException e) {
                 e.printStackTrace();
+                System.out.println("Peer has closed the connection");
+                observer.closeConnection(remoteHostPort);
             }
         }
     }

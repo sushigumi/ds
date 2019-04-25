@@ -4,9 +4,8 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
 
 import unimelb.bitbox.connection.ConnectionManager;
@@ -22,6 +21,8 @@ public class ServerMain implements FileSystemObserver {
 
 	private HostPort localHostPort;
 
+	private ScheduledExecutorService timer;
+
 	public ServerMain() throws NumberFormatException, IOException, NoSuchAlgorithmException {
 		fileSystemManager=new FileSystemManager(Configuration.getConfigurationValue("path"),this);
 
@@ -29,6 +30,22 @@ public class ServerMain implements FileSystemObserver {
 										  Integer.parseInt(Configuration.getConfigurationValue("port")));
 
 		start();
+
+		// Generate a timer to peridocially sync events to peers
+		Runnable periodicSync = new Runnable() {
+			@Override
+			public void run() {
+				ArrayList<FileSystemEvent> fileSystemEvents = fileSystemManager.generateSyncEvents();
+
+				for (FileSystemEvent event : fileSystemEvents) {
+					ConnectionManager.getInstance().processFileSystemEvent(event);
+				}
+			}
+		};
+
+		timer = Executors.newSingleThreadScheduledExecutor();
+		long syncInterval = Long.parseLong(Configuration.getConfigurationValue("syncInterval"));
+		timer.scheduleAtFixedRate(periodicSync, 0, syncInterval, TimeUnit.SECONDS);
 	}
 
 	@Override
