@@ -4,10 +4,8 @@ import unimelb.bitbox.util.Configuration;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
-import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Handles connections and is a singleton
@@ -106,5 +104,15 @@ public class ConnectionManager {
 
     public void processFileSystemEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
         // Create runnable here
+
+        /*
+        switch (fileSystemEvent.event){
+
+            case DIRECTORY_DELETE:
+                new DirectoryDeleteRequest(output, );
+
+        }
+        */
+
     }
 }

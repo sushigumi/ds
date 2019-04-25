@@ -1,5 +1,8 @@
 package unimelb.bitbox.connection;
 
+import unimelb.bitbox.runnables.DirectoryCreateResponse;
+import unimelb.bitbox.runnables.DirectoryDeleteRequest;
+import unimelb.bitbox.runnables.DirectoryDeleteResponse;
 import unimelb.bitbox.messages.Command;
 import unimelb.bitbox.messages.InvalidProtocolType;
 import unimelb.bitbox.messages.MessageGenerator;
@@ -135,6 +138,7 @@ public abstract class Connection {
                     String in = input.readUTF();
 
                     Document doc = Document.parse(in);
+
                     System.out.println("Received: " + doc.toJson());
 
                     Command command = Command.fromString(doc.getString("command"));
@@ -147,6 +151,14 @@ public abstract class Connection {
                         case FILE_BYTES_RESPONSE:
                             background.submit(new ConstructFile(output, fileSystemManager, doc));
                             break;
+                        
+                        case DIRECTORY_DELETE_REQUEST:
+                            background.submit(new DirectoryDeleteResponse(output, fileSystemManager, doc));
+                            break;
+                        case DIRECTORY_CREATE_REQUEST:
+                            background.submit(new DirectoryCreateResponse(output, fileSystemManager, doc));
+                            break;
+                        
 
                         default:
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.INVALID_COMMAND));
