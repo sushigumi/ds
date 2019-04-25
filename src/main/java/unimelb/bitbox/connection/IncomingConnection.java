@@ -34,10 +34,10 @@ public class IncomingConnection extends Connection {
             try {
                 Document message = Document.parse(input.readLine());
                 //System.out.println(message.toJson());
-                String command = message.getString("command");
+                Command command = Command.fromString(message.getString("command"));
 
                 // If it is a HANDSHAKE_REQUEST then send a HANDSHAKE_RESPONSE, else send an INVALID_PROTOCOL
-                if (command.equals(Command.HANDSHAKE_REQUEST.toString())) {
+                if (command == Command.HANDSHAKE_REQUEST) {
                     HostPort remoteHostPort = new HostPort((Document)message.get("hostPort"));
                     // If the maximum number of incoming connections has been reached, reject the connection
                     // else accept the connection

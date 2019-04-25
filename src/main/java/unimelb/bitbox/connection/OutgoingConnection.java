@@ -50,12 +50,12 @@ public class OutgoingConnection extends Connection {
                     sendMessage(MessageGenerator.genHandshakeRequest(localHostPort));
 
                     Document response = Document.parse(input.readLine());
-                    //System.out.println(response.toJson());
+                    System.out.println(response.toJson());
 
-                    String command = response.getString("command");
+                    Command command = Command.fromString(response.getString("command"));
 
                     // Connected so just exit this and proceed to listen for file events
-                    if (command.equals(Command.HANDSHAKE_RESPONSE.toString())) {
+                    if (command == Command.HANDSHAKE_RESPONSE) {
                         updateRemoteHostPort(remoteHostPort);
                         ConnectionManager.getInstance().connectedPeer(remoteHostPort, false);
                         listener.submit(new Listener());
@@ -65,7 +65,7 @@ public class OutgoingConnection extends Connection {
                     }
                     // Connection refused
                     // Add the peers to connect to end of the queue to simulate breadth-first search of peers
-                    else if (command.equals(Command.CONNECTION_REFUSED.toString())) {
+                    else if (command == Command.CONNECTION_REFUSED) {
                         // If Connection is refused, start a new connection to the other peers
                         // Close the current socket first
                         // TODO maybe a try-catch here
