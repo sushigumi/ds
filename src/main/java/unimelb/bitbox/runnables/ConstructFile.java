@@ -7,6 +7,7 @@ import unimelb.bitbox.util.FileSystemManager;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
 /**
@@ -47,11 +48,14 @@ public class ConstructFile extends BaseRunnable {
             // If there is a failure in writing then should request for the bytes again
             try {
                 fileSystemManager.writeFile(pathName, bytes, position);
+                fileSystemManager.checkWriteComplete(pathName);
             }
             // Cannot write the bytes
             catch (IOException e) {
                 Document fileDescriptor = (Document) fileBytesResponse.get("fileDescriptor");
                 sendMessage(MessageGenerator.genFileBytesRequest(fileDescriptor, pathName, position));
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
             }
         }
         // Unsafe path name so don't do anything
