@@ -1,14 +1,11 @@
 package unimelb.bitbox.connection;
 
-import unimelb.bitbox.runnables.DirectoryCreateResponse;
-import unimelb.bitbox.runnables.DirectoryDeleteRequest;
-import unimelb.bitbox.runnables.DirectoryDeleteResponse;
+import unimelb.bitbox.eventprocess.FileCreateRequest;
+import unimelb.bitbox.eventprocess.FileDeleteRequest;
+import unimelb.bitbox.runnables.*;
 import unimelb.bitbox.messages.Command;
 import unimelb.bitbox.messages.InvalidProtocolType;
 import unimelb.bitbox.messages.MessageGenerator;
-import unimelb.bitbox.runnables.ConstructFile;
-import unimelb.bitbox.runnables.FileBytesResponse;
-import unimelb.bitbox.runnables.InvalidProtocol;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
@@ -104,11 +101,30 @@ public abstract class Connection {
      */
     public void submitEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
         switch (fileSystemEvent.event) {
+            /*
             case FILE_CREATE:
                 String request = MessageGenerator.genFileBytesRequests(fileSystemEvent.fileDescriptor.toDoc(), fileSystemEvent.pathName).remove(0);
                 // TODO change to sending FILE_CREATE_REQUEST
                 sender.submit(new FileBytesResponse(output, fileSystemManager, Document.parse(request)));
                 break;
+                */
+
+            case FILE_CREATE:
+                sender.submit(new FileCreateRequest(output, fileSystemEvent));
+                break;
+            case FILE_DELETE:
+                sender.submit(new FileDeleteRequest(output,fileSystemEvent));
+                break;
+            case FILE_MODIFY:
+                sender.submit(new FileModifyRequest(output,fileSystemEvent));
+                break;
+            case DIRECTORY_CREATE:
+                sender.submit(new DirectoryCreateRequest(output, fileSystemEvent.pathName));
+                break;
+            case DIRECTORY_DELETE:
+                sender.submit(new DirectoryDeleteRequest(output, fileSystemEvent.pathName));
+                break;
+
         }
 
     }
