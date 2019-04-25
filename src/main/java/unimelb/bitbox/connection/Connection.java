@@ -188,7 +188,7 @@ public abstract class Connection {
                         	break;
                     	
                         case FILE_MODIFY_REQUEST:
-                        	//
+                        	background.submit(new FileModifyResponse(output, doc, fileSystemManager));
                     	    break;
                                    
                         case FILE_MODIFY_RESPONSE:

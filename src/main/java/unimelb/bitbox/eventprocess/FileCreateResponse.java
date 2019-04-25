@@ -36,11 +36,13 @@ public class FileCreateResponse extends BaseRunnable
 		{   
 			doc.append("message", "unsafe pathname given");
 			doc.append("status", false);
+			sendMessage(doc.toJson());
 		}
 		else if(fileSystemManager.fileNameExists(pathName)) 
 		{
 			doc.append("message", "pathname already exists");
 			doc.append("status", false);
+			sendMessage(doc.toJson());
 		}
 		else
 		{
@@ -58,9 +60,7 @@ public class FileCreateResponse extends BaseRunnable
 				           for (String message : messages) {
 				               sendMessage(message);
 				           }
-				    	
-				    }
-				    
+				    }  
 				
 				}
 			} catch (NoSuchAlgorithmException e) {
@@ -71,13 +71,6 @@ public class FileCreateResponse extends BaseRunnable
 				e.printStackTrace();
 			}
 		}
-		
-	    
-		sendMessage(doc.toJson());
-		
-		
-		
-		
 		
 		
 	}
