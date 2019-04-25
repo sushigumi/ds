@@ -52,7 +52,6 @@ public class FileCreateResponse extends BaseRunnable
 		}
 		else
 		{
-			System.out.println(3);
 			try {
 				if(fileSystemManager.createFileLoader(pathName, 
 						fileDescriptor.getString("md5"),fileDescriptor.getLong("fileSize"),
