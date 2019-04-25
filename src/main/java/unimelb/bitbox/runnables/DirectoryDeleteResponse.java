@@ -5,6 +5,7 @@ import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 
 public class DirectoryDeleteResponse extends BaseRunnable {
@@ -12,7 +13,7 @@ public class DirectoryDeleteResponse extends BaseRunnable {
     private FileSystemManager fileSystemManager;
     private Document request;
 
-    public DirectoryDeleteResponse(DataOutputStream output, FileSystemManager fileSystemManager,
+    public DirectoryDeleteResponse(BufferedWriter output, FileSystemManager fileSystemManager,
                                    Document request) {
         super(output);
         this.fileSystemManager = fileSystemManager;

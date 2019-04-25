@@ -1,4 +1,5 @@
 package unimelb.bitbox.eventprocess;
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 
 import unimelb.bitbox.messages.Command;
@@ -16,8 +17,8 @@ public class FileDeleteResponse extends BaseRunnable
 	private FileSystemManager fileSystemManager;
 
 	
-	public FileDeleteResponse(DataOutputStream output, Document received,
-			FileSystemManager fileSystemManager) 
+	public FileDeleteResponse(BufferedWriter output, Document received,
+							  FileSystemManager fileSystemManager)
 	{
 		super(output);
 		this.received = received;

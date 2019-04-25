@@ -4,6 +4,7 @@ import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -19,7 +20,7 @@ public class ConstructFile extends BaseRunnable {
     private FileSystemManager fileSystemManager;
     private Document fileBytesResponse;
 
-    public ConstructFile(DataOutputStream output, FileSystemManager fileSystemManager,
+    public ConstructFile(BufferedWriter output, FileSystemManager fileSystemManager,
                          Document fileBytesResponse) {
         super(output);
         this.fileSystemManager = fileSystemManager;

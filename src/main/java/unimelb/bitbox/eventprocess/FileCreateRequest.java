@@ -2,6 +2,7 @@
  * 
  */
 package unimelb.bitbox.eventprocess;
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 
 import unimelb.bitbox.messages.Command;
@@ -18,7 +19,7 @@ public class FileCreateRequest extends BaseRunnable
 	private FileSystemEvent fileSystemEvent;
 
 	
-	public FileCreateRequest(DataOutputStream output, FileSystemEvent fileSystemEvent) 
+	public FileCreateRequest(BufferedWriter output, FileSystemEvent fileSystemEvent)
 	{
 		super(output);
 		this.fileSystemEvent = fileSystemEvent;

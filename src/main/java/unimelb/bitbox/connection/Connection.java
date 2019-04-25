@@ -36,8 +36,8 @@ public abstract class Connection {
     HostPort localHostPort;
     HostPort remoteHostPort;
 
-    DataOutputStream output;
-    DataInputStream input;
+    BufferedWriter output;
+    BufferedReader input;
 
     ExecutorService listener;
     ExecutorService sender;
@@ -98,8 +98,8 @@ public abstract class Connection {
 
     void createWriterAndReader() {
         try {
-            input = new DataInputStream(socket.getInputStream());
-            output = new DataOutputStream(socket.getOutputStream());
+            input = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+            output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
         } catch (IOException e) {
             try {
                 socket.close();
@@ -164,7 +164,7 @@ public abstract class Connection {
         public void run() {
             try {
                 while (true) {
-                    String in = input.readUTF();
+                    String in = input.readLine();
 
                     Document doc = Document.parse(in);
 

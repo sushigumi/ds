@@ -2,6 +2,7 @@
  * 
  */
 package unimelb.bitbox.eventprocess;
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 
 import unimelb.bitbox.messages.Command;
@@ -18,7 +19,7 @@ public class FileDeleteRequest extends BaseRunnable
 	private FileSystemEvent fileSystemEvent;
 
 	
-	public FileDeleteRequest(DataOutputStream output, FileSystemEvent fileSystemEvent) 
+	public FileDeleteRequest(BufferedWriter output, FileSystemEvent fileSystemEvent)
 	{
 		super(output);
 		this.fileSystemEvent = fileSystemEvent;

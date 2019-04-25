@@ -1,5 +1,6 @@
 package unimelb.bitbox.connection;
 
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 
 
@@ -11,7 +12,7 @@ import unimelb.bitbox.util.FileSystemManager;
 public class FileModifyRequest extends BaseRunnable {
 	private FileSystemManager.FileSystemEvent fileSystemEvent;
 	
-	public FileModifyRequest (DataOutputStream output, FileSystemManager.FileSystemEvent fileSystemEvent) {
+	public FileModifyRequest (BufferedWriter output, FileSystemManager.FileSystemEvent fileSystemEvent) {
 		super(output);
 		this.fileSystemEvent=fileSystemEvent;
 	}
