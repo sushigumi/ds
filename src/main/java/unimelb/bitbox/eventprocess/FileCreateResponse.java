@@ -1,5 +1,8 @@
 package unimelb.bitbox.eventprocess;
 import java.io.DataOutputStream;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
@@ -25,6 +28,8 @@ public class FileCreateResponse extends BaseRunnable
 	public void run() 
 	{
 		String pathName = doc.getString("pathName");
+		Document fileDescriptor = (Document)doc.get("fileDescriptor");
+		
 		if(!fileSystemManager.isSafePathName(pathName))
 		{   
 			doc.append("message", "unsafe pathname given");
@@ -37,15 +42,36 @@ public class FileCreateResponse extends BaseRunnable
 		}
 		else
 		{
-			
-			doc.append("message", "file loader ready");
-		    doc.append("status", true);
-			
-			
+			try {
+				if(fileSystemManager.createFileLoader(pathName, 
+						fileDescriptor.getString("md5"),fileDescriptor.getLong("filesize"),
+						fileDescriptor.getLong("lastModified"))){
+				    doc.append("message", "file loader ready");
+				    doc.append("status", true);
+				    sendMessage(doc.toJson());
+				    if(!checkShortcut(pathName))
+				    {
+				    	
+				    }
+				    
+				
+				}
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 	    
 		sendMessage(doc.toJson());
+		
+		
+		
+		
+		
 		
 	}
 	
