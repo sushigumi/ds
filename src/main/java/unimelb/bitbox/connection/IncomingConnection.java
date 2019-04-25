@@ -45,6 +45,7 @@ public class IncomingConnection extends Connection {
                         listener.submit(new Listener());
 
                         // Increment the number of incoming connections in the Connection Manager
+                        updateRemoteHostPort(remoteHostPort);
                         ConnectionManager.getInstance().connectedPeer(remoteHostPort, true);
 
                         // TODO Call generate sync events here and sent appropriate messages

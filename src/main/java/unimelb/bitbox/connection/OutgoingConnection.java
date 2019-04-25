@@ -55,6 +55,7 @@ public class OutgoingConnection extends Connection {
 
                     // Connected so just exit this and proceed to listen for file events
                     if (command.equals(Command.HANDSHAKE_RESPONSE.toString())) {
+                        updateRemoteHostPort(remoteHostPort);
                         ConnectionManager.getInstance().connectedPeer(remoteHostPort, false);
                         listener.submit(new Listener());
                         toConnect.clear(); // Clear to connect since already connected
