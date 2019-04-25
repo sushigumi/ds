@@ -62,14 +62,20 @@ public class FileModifyResponse extends BaseRunnable {
 
 				} else{
 				    doc.append("message", "filePath being modified");
-				    doc.append("status", true);
+				    doc.append("status", false);
 				    sendMessage(doc.toJson());
                 }
 			} catch (NoSuchAlgorithmException e) {
+				doc.append("message", "file loader already in progress");
+				doc.append("status", false);
+				sendMessage(doc.toJson());
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
+				doc.append("message", "error creating file loader");
+				doc.append("status", false);
+				sendMessage(doc.toJson());
 				e.printStackTrace();
 			}
 		}
