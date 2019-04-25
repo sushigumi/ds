@@ -63,6 +63,7 @@ public class FileModifyResponse extends BaseRunnable {
 				} else{
 				    doc.append("message", "filePath being modified");
 				    doc.append("status", true);
+				    sendMessage(doc.toJson());
                 }
 			} catch (NoSuchAlgorithmException e) {
 				// TODO Auto-generated catch block
