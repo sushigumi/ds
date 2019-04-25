@@ -13,21 +13,20 @@ public class MessageValidator {
     }
 
     public String validateFileChangeRequest(Document doc) {
-    	
     	Document fileDescriptor = (Document)doc.get("fileDescriptor");
-    	
-        if (doc.getString("fileDescriptor") == null) {
+
+        if (doc.get("fileDescriptor") == null) {
         	return "fileDescriptor";       	
         }
-        else if (fileDescriptor.getString("md5") == null) {
+        if (fileDescriptor.get("md5") == null) {
         	return "md5";
         }
         //not so sure
-        else if (Long.valueOf(fileDescriptor.getLong("fileSize") )== null) {
+        if (Long.valueOf(fileDescriptor.getLong("fileSize") )== null) {
         	return "fileSize";	
         }
         
-        else if (Long.valueOf(fileDescriptor.getLong("lastModified")) == null) {
+        if (Long.valueOf(fileDescriptor.getLong("lastModified")) == null) {
         	return "lastModified";	
         }
         
@@ -43,7 +42,7 @@ public class MessageValidator {
     	
     	Document fileDescriptor = (Document)doc.get("fileDescriptor");
     	
-        if (doc.getString("fileDescriptor") == null) {
+        if (doc.get("fileDescriptor") == null) {
         	return "fileDescriptor";       	
         }
         else if (fileDescriptor.getString("md5") == null) {
@@ -78,7 +77,7 @@ public class MessageValidator {
     	
         Document fileDescriptor = (Document)doc.get("fileDescriptor");
     	
-        if (doc.getString("fileDescriptor") == null) {
+        if (doc.get("fileDescriptor") == null) {
         	return "fileDescriptor";       	
         }
         else if (fileDescriptor.getString("md5") == null) {
@@ -113,7 +112,7 @@ public class MessageValidator {
     	
         Document fileDescriptor = (Document)doc.get("fileDescriptor");
     	
-        if (doc.getString("fileDescriptor") == null) {
+        if (doc.get("fileDescriptor") == null) {
         	return "fileDescriptor";       	
         }
         else if (fileDescriptor.getString("md5") == null) {
@@ -129,57 +128,56 @@ public class MessageValidator {
         }
         
         if (doc.getString("pathName") == null) {
-        	return "pathName";       	
+        	return "pathName";
         }
-    	
+
         if (Long.valueOf(doc.getLong("position") )== null) {
-        	return "position";	
+        	return "position";
         }
-        
+
         if (Long.valueOf(doc.getLong("length")) == null) {
-        	return "length";	
+        	return "length";
         }
-        
+
         if (doc.getString("content") == null) {
-        	return "content";       	
-        }        
-        
+        	return "content";
+        }
+
         if (doc.getString("message") == null) {
-        	return "message";       	
+        	return "message";
         }
-        
+
         if (Boolean.toString(doc.getBoolean("status")) == null) {
-        	return "status";     	
+        	return "status";
         }
-        return null;	
-	 	
+        return null;
+
     }
-    
-    
+
+
     public String validateDirectoryChangeRequest(Document doc) {
-    	
+
     	 if (doc.getString("pathName") == null) {
-         	return "pathName";       	
+         	return "pathName";
          }
     	 else {
     		 return null;
     	 }
-    	
+
     }
     public String validateDirectoryChangeResponse(Document doc) {
-    	
-    	 if (doc.getString("pathName") == null) {
-         	return "pathName";       	
-         }
-    	
-    	 if (doc.getString("message") == null) {
-         	return "message";       	
-         }
-         
-         if (Boolean.toString(doc.getBoolean("status")) == null) {
-         	return "status";     	
-         }
-         return null;	
+
+        if (doc.getString("pathName") == null) {
+            return "pathName";
+        }
+
+        if (doc.getString("message") == null) {
+            return "message";
+        }
+
+        if (Boolean.toString(doc.getBoolean("status")) == null) {
+            return "status";
+        }
+        return null;
     }
-    
 }

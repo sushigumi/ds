@@ -183,6 +183,7 @@ public abstract class Connection {
                     Command command = Command.fromString(doc.getString("command"));
                     
                     if (command == null) {
+                        System.out.println(1);
                     	background.submit(new InvalidProtocol(output, "message must contain a command field as string"));
                     	closeConnection();
                     }
@@ -195,11 +196,11 @@ public abstract class Connection {
                                     closeConnection();
                                     return;
                                 }
-                                else {              	
+                                else {
                     	            background.submit(new FileCreateResponse(output, doc, fileSystemManager));
                                 }
                     	        break;
-                    	    
+
                             case FILE_CREATE_RESPONSE:
                                 String createResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
                                 if (createResponse != null) {
@@ -208,6 +209,7 @@ public abstract class Connection {
                                     return;
                                 }
                         	    break;
+
                    	
                             case FILE_DELETE_REQUEST:
                             	String deleteRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);

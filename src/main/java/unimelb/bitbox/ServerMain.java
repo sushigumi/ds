@@ -30,7 +30,19 @@ public class ServerMain implements FileSystemObserver {
 										  Integer.parseInt(Configuration.getConfigurationValue("port")));
 
 		start();
+	}
 
+	@Override
+	public void processFileSystemEvent(FileSystemEvent fileSystemEvent) {
+		// TODO: process events
+		//Make a new thread
+		ConnectionManager.getInstance().processFileSystemEvent(fileSystemEvent);
+	}
+
+	/**
+	 * Start the server
+	 */
+	private void start() {
 		// Generate a timer to peridocially sync events to peers
 		Runnable periodicSync = new Runnable() {
 			@Override
@@ -45,20 +57,9 @@ public class ServerMain implements FileSystemObserver {
 
 		timer = Executors.newSingleThreadScheduledExecutor();
 		long syncInterval = Long.parseLong(Configuration.getConfigurationValue("syncInterval"));
+		System.out.println(syncInterval);
 		timer.scheduleAtFixedRate(periodicSync, 0, syncInterval, TimeUnit.SECONDS);
-	}
 
-	@Override
-	public void processFileSystemEvent(FileSystemEvent fileSystemEvent) {
-		// TODO: process events
-		//Make a new thread
-		ConnectionManager.getInstance().processFileSystemEvent(fileSystemEvent);
-	}
-
-	/**
-	 * Start the server
-	 */
-	private void start() {
 		// Create a server socket
 		try {
 			ServerSocket serverSocket = new ServerSocket(localHostPort.port);

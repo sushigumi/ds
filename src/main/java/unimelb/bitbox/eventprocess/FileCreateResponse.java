@@ -72,19 +72,19 @@ public class FileCreateResponse extends BaseRunnable
 				               sendMessage(message);
 				           }
 				    }
-
-				    else {
-				    	doc.append("message", "file being modified");
-				    	doc.append("status", false);
-				    	sendMessage(doc.toJson());
-					}
-				    
-				
+				} else {
+					doc.append("message", "file loader being modified");
+					doc.append("status", false);
+					sendMessage(doc.toJson());
 				}
-			} catch (NoSuchAlgorithmException e) {
+			}
+			catch (IOException e) {
 				// TODO Auto-generated catch block
+				doc.append("message", "error in exception");
+				doc.append("status", false);
+				sendMessage(doc.toJson());
 				e.printStackTrace();
-			} catch (IOException e) {
+			} catch (NoSuchAlgorithmException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
