@@ -35,6 +35,7 @@ public class ServerMain implements FileSystemObserver {
 	public void processFileSystemEvent(FileSystemEvent fileSystemEvent) {
 		// TODO: process events
 		//Make a new thread
+		ConnectionManager.getInstance().processFileSystemEvent(fileSystemEvent);
 	}
 
 	/**

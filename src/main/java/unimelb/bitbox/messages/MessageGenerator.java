@@ -1,6 +1,7 @@
 package unimelb.bitbox.messages;
 
 import unimelb.bitbox.util.Document;
+import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.util.ArrayList;
@@ -68,6 +69,64 @@ public class MessageGenerator {
         doc.append("command", Commands.CONNECTION_REFUSED.toString());
         doc.append("message", CONNECTION_LIMIT_REACHED);
         doc.append("peers", peersDoc);
+
+        return doc.toJson();
+    }
+
+    public static String genDirectoryDeleteRequest(String pathName){
+        Document doc = new Document();
+        doc.append("command",Commands.DIRECTORY_DELETE_REQUEST.toString());
+        doc.append("pathName",pathName);
+
+        return doc.toJson();
+    }
+
+    public static String genDirectoryDeleteResponse(FileSystemManager fileSystemManager, String pathName){
+        Document doc = new Document();
+        doc.append("command", Commands.DIRECTORY_DELETE_RESPONSE.toString());
+        doc.append("pathName", pathName);
+
+        if(fileSystemManager.deleteDirectory(pathName)) {
+            doc.append("message", "directory deleted");
+            doc.append("status", true);
+        }
+        else if(!fileSystemManager.dirNameExists(pathName)){
+            doc.append("message", "pathname does not exist");
+            doc.append("status", true);
+        }
+        else if(!fileSystemManager.isSafePathName(pathName)){
+            doc.append("message", "unsafe pathname given");
+            doc.append("status", false);
+        }
+
+        return doc.toJson();
+    }
+
+    public static String genDirectoryCreateRequest(String pathName){
+        Document doc = new Document();
+        doc.append("command", Commands.DIRECTORY_CREATE_REQUEST.toString());
+        doc.append("pathName", pathName);
+
+        return doc.toJson();
+    }
+
+    public static String genDirectoryCreateResponse(FileSystemManager fileSystemManager, String pathName){
+        Document doc = new Document();
+        doc.append("command", Commands.DIRECTORY_CREATE_RESPONSE.toString());
+        doc.append("pathName", pathName);
+
+        if(fileSystemManager.dirNameExists(pathName)){
+            doc.append("message", "pathname already exists");
+            doc.append("status", false);
+        }
+        else if(!fileSystemManager.isSafePathName(pathName)){
+            doc.append("message", "unsafe pathname given");
+            doc.append("status", false);
+        }
+        else if(fileSystemManager.makeDirectory(pathName)) {
+            doc.append("message", "directory created");
+            doc.append("status", true);
+        }
 
         return doc.toJson();
     }
