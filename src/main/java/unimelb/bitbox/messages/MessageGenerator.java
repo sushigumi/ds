@@ -266,6 +266,7 @@ public class MessageGenerator {
         }
         // Return appropriate errors when exceptions are caught
         // Error accessing file system
+        // TODO Retry?
         catch (IOException e) {
             doc.append("content", "");
             doc.append("message", "error accessing file system");
