@@ -22,26 +22,27 @@ public class FileModifyResponse extends Baserunnable{
 	}
 	
 	public void run () {
-			Document doc = new Document();
+			String pathName = doc.getString("pathName");
+			Document fileDescriptor = (Document)doc.get("fileDescriptor");
 			//if pathName is not a safePathName then print a notification and stop the loop
-			if(!(fileSystemManager.isSafePathName(fileSystemEvent.pathName))) {
+			if(!(fileSystemManager.isSafePathName(pathName))) {
 				doc.append("message","unsafe pathname given");
 				doc.append("status","false");
 				sendMessage(doc.toJson());
 				}
 			//if pathName does not exist then print a notification and stop the loop
-			else if(!(fileSystemManager.dirNameExists(fileSystemEvent.pathName))) {
+			else if(!(fileSystemManager.dirNameExists(pathName))) {
 				doc.append("message","pathname does not exist");
 				doc.append("status","false");
 				sendMessage(doc.toJson());
 				}
 			//if file content already exist then print a notification and stop the loop
-			else if(fileSystemManager.fileNameExists(fileSystemEvent.pathName,fileSystemEvent.fileDescriptor.md5)) {
+			else if(fileSystemManager.fileNameExists(pathName,fileDescriptor.md5)) {
 				doc.append("message","unsafe pathname given");
 				doc.append("status","false");
 				sendMessage(doc.toJson());
 				}
-			else {		{
+			else {		
 				try {
 					if(fileSystemManager.modifyFileLoader(pathName, 
 							fileDescriptor.getString("md5"),fileDescriptor.getLong("filesize"),
@@ -69,7 +70,3 @@ public class FileModifyResponse extends Baserunnable{
 					e.printStackTrace();
 				}
 			}
-
-		
-			
-	}
