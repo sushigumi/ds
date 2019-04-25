@@ -4,6 +4,7 @@ import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.util.ArrayList;
 
@@ -17,7 +18,7 @@ public class FileBytesRequest extends BaseRunnable {
     private Document fileDescriptor;
     private String pathName;
 
-    public FileBytesRequest(DataOutputStream output, Document fileDescriptor, String pathName) {
+    public FileBytesRequest(BufferedWriter output, Document fileDescriptor, String pathName) {
         super(output);
         this.fileDescriptor = fileDescriptor;
         this.pathName = pathName;

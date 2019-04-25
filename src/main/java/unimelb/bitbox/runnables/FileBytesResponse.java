@@ -4,6 +4,7 @@ import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 
 public class FileBytesResponse extends BaseRunnable {
@@ -11,7 +12,7 @@ public class FileBytesResponse extends BaseRunnable {
 
     private Document fileBytesRequest;
 
-    public FileBytesResponse(DataOutputStream output, FileSystemManager fileSystemManager,
+    public FileBytesResponse(BufferedWriter output, FileSystemManager fileSystemManager,
                              Document fileBytesRequest) {
         super(output);
         this.fileSystemManager = fileSystemManager;

@@ -6,7 +6,7 @@ import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 
-import java.io.DataOutputStream;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ public class FileModifyResponse extends BaseRunnable {
 	private FileSystemManager fileSystemManager;
 	private Document received;
 
-	public FileModifyResponse(DataOutputStream output, Document received, FileSystemManager fileSystemManager) {
+	public FileModifyResponse(BufferedWriter output, Document received, FileSystemManager fileSystemManager) {
 		super(output);
 		this.received = received;
 		this.fileSystemManager = fileSystemManager;

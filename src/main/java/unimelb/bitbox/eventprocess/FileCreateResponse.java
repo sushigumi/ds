@@ -1,4 +1,5 @@
 package unimelb.bitbox.eventprocess;
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -20,7 +21,7 @@ public class FileCreateResponse extends BaseRunnable
 	private FileSystemManager fileSystemManager;
 
 	
-	public FileCreateResponse(DataOutputStream output, Document received, FileSystemManager fileSystemManager)
+	public FileCreateResponse(BufferedWriter output, Document received, FileSystemManager fileSystemManager)
 	{
 		super(output);
 		this.received = received;
