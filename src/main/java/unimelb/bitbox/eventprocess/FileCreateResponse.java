@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
+import unimelb.bitbox.messages.Command;
 import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
@@ -15,22 +16,27 @@ import unimelb.bitbox.util.FileSystemManager;
  */
 public class FileCreateResponse extends BaseRunnable
 {
-	private Document doc;
+	private Document received;
 	private FileSystemManager fileSystemManager;
 
 	
-	public FileCreateResponse(DataOutputStream output, Document doc, FileSystemManager fileSystemManager) 
+	public FileCreateResponse(DataOutputStream output, Document received, FileSystemManager fileSystemManager)
 	{
 		super(output);
-		this.doc = doc;
+		this.received = received;
 		this.fileSystemManager = fileSystemManager;
 	}
 	
 	@Override
 	public void run() 
 	{
-		String pathName = doc.getString("pathName");
-		Document fileDescriptor = (Document)doc.get("fileDescriptor");
+		String pathName = received.getString("pathName");
+		Document fileDescriptor = (Document)received.get("fileDescriptor");
+
+		Document doc = new Document();
+		doc.append("command", Command.FILE_CREATE_RESPONSE.toString());
+		doc.append("fileDescriptor", fileDescriptor);
+		doc.append("pathName", pathName);
 		
 		if(!fileSystemManager.isSafePathName(pathName))
 		{   

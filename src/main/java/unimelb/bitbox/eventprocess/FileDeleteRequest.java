@@ -3,6 +3,8 @@
  */
 package unimelb.bitbox.eventprocess;
 import java.io.DataOutputStream;
+
+import unimelb.bitbox.messages.Command;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager.FileSystemEvent;
@@ -27,7 +29,7 @@ public class FileDeleteRequest extends BaseRunnable
 	public void run() 
 	{
 		Document doc = new Document();
-		doc.append("command", "FILE_DELETE_REQUEST");
+		doc.append("command", Command.FILE_DELETE_REQUEST.toString());
 		doc.append("fileDescriptor", fileSystemEvent.fileDescriptor.toDoc());
 		doc.append("pathName", fileSystemEvent.pathName);
 		
