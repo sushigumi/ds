@@ -67,7 +67,13 @@ public class FileCreateResponse extends BaseRunnable
 				           for (String message : messages) {
 				               sendMessage(message);
 				           }
-				    }  
+				    }
+
+				    else {
+				    	doc.append("message", "file being modified");
+				    	doc.append("status", false);
+				    	sendMessage(doc.toJson());
+					}
 				    
 				
 				}
