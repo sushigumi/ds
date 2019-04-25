@@ -1,5 +1,6 @@
 package unimelb.bitbox.connection;
 
+import unimelb.bitbox.messages.MessageValidator;
 import unimelb.bitbox.runnables.DirectoryCreateResponse;
 import unimelb.bitbox.runnables.DirectoryDeleteRequest;
 import unimelb.bitbox.runnables.DirectoryDeleteResponse;
@@ -10,7 +11,6 @@ import unimelb.bitbox.eventprocess.FileDeleteResponse;
 import unimelb.bitbox.runnables.*;
 import unimelb.bitbox.messages.Command;
 import unimelb.bitbox.messages.InvalidProtocolType;
-import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
@@ -158,6 +158,15 @@ public abstract class Connection {
         }
     }
 
+    private void closeConnection() {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        observer.closeConnection(remoteHostPort);
+    }
+
     class Listener implements Runnable {
 
         @Override
@@ -171,13 +180,20 @@ public abstract class Connection {
                     System.out.println("Received: " + doc.toJson());
 
                     Command command = Command.fromString(doc.getString("command"));
+
                     // TODO switch here
                     switch (command) {
                         case FILE_CREATE_REQUEST:
                     	    background.submit(new FileCreateResponse(output, doc, fileSystemManager));
                     	    break;
                     	    
-                        case FILE_CREATE_RESPONSE:                        	
+                        case FILE_CREATE_RESPONSE:
+                            String err = MessageValidator.getInstance().validateFileCreateResponse(doc);
+                            if (err != null) {
+                                background.submit(new InvalidProtocol(output, err));
+                                closeConnection();
+                                return;
+                            }
                         	break;
                    	
                         case FILE_DELETE_REQUEST:
@@ -218,6 +234,8 @@ public abstract class Connection {
                     	    
                         default:
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.INVALID_COMMAND));
+                            // TODO close connection
+                            break;
                     }
                 }
             }

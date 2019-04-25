@@ -2,5 +2,6 @@ package unimelb.bitbox.messages;
 
 public enum InvalidProtocolType {
     INVALID_COMMAND,
-    MISSING_FIELD
+    MISSING_FIELD,
+    CUSTOM
 }

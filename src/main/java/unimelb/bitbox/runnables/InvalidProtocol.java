@@ -8,6 +8,7 @@ import java.io.BufferedWriter;
 public class InvalidProtocol extends BaseRunnable {
     private InvalidProtocolType type;
     private String field;
+    private String message;
 
     public InvalidProtocol(BufferedWriter output, InvalidProtocolType type) {
         super(output);
@@ -26,9 +27,19 @@ public class InvalidProtocol extends BaseRunnable {
         this.field = field;
     }
 
+    public InvalidProtocol(BufferedWriter output, String message) {
+        super(output);
+        type = InvalidProtocolType.CUSTOM;
+        this.message = message;
+    }
+
     @Override
     public void run() {
         switch (type) {
+            case CUSTOM:
+                sendMessage(MessageGenerator.genInvalidProtocol(message));
+                break;
+
             case INVALID_COMMAND:
                 sendMessage(MessageGenerator.genInvalidProtocol("invalid command"));
                 break;
