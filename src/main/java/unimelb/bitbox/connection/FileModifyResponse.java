@@ -1,5 +1,6 @@
 package unimelb.bitbox.connection;
 
+import unimelb.bitbox.messages.Command;
 import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
@@ -15,18 +16,23 @@ public class FileModifyResponse extends BaseRunnable {
 
 	private DataOutputStream output;
 	private FileSystemManager fileSystemManager;
-	private Document doc;
+	private Document received;
 	private FileSystemManager.FileSystemEvent fileSystemEvent;
 
-	public FileModifyResponse(DataOutputStream output, Document doc, FileSystemManager fileSystemManager) {
+	public FileModifyResponse(DataOutputStream output, Document received, FileSystemManager fileSystemManager) {
 		super(output);
-		this.doc = doc;
+		this.received = received;
 		this.fileSystemManager = fileSystemManager;
 	}
 
 	public void run() {
-		String pathName = doc.getString("pathName");
-		Document fileDescriptor = (Document) doc.get("fileDescriptor");
+		String pathName = received.getString("pathName");
+		Document fileDescriptor = (Document) received.get("fileDescriptor");
+
+		Document doc = new Document();
+		doc.append("command", Command.FILE_MODIFY_RESPONSE.toString());
+		doc.append("fileDescriptor", fileDescriptor);
+		doc.append("pathName", pathName);
 		//if pathName is not a safePathName then print a notification and stop the loop
 		if (!(fileSystemManager.isSafePathName(pathName))) {
 			doc.append("message", "unsafe pathname given");
