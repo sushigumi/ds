@@ -32,6 +32,7 @@ public abstract class Connection {
     Socket socket; // Other peer's socket
 
     HostPort localHostPort;
+    HostPort remoteHostPort;
 
     DataOutputStream output;
     DataInputStream input;
@@ -41,6 +42,7 @@ public abstract class Connection {
     ExecutorService background;
 
     FileSystemManager fileSystemManager;
+    ConnectionObserver observer;
 
     //TODO might need hashmap here to count the number of files needed to receive if not done in one sitting
     //TODO updating while bytes response comes in
@@ -82,6 +84,14 @@ public abstract class Connection {
         // sent
         this.sender = Executors.newSingleThreadExecutor();
         this.background = Executors.newSingleThreadExecutor();
+    }
+
+    void updateRemoteHostPort(HostPort remoteHostPort) {
+        this.remoteHostPort = remoteHostPort;
+    }
+
+    void addConnectionObserver(ConnectionObserver observer) {
+        this.observer = observer;
     }
 
     void createWriterAndReader() {
@@ -127,8 +137,6 @@ public abstract class Connection {
         }
     }
 
-
-
     class Listener implements Runnable {
 
         @Override
@@ -164,8 +172,12 @@ public abstract class Connection {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.INVALID_COMMAND));
                     }
                 }
-            } catch (IOException e) {
+            }
+            // When the peer has closed the connection
+            catch (IOException e) {
                 e.printStackTrace();
+                System.out.println("Peer has closed the connection");
+                observer.closeConnection(remoteHostPort);
             }
         }
     }
