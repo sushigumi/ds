@@ -31,7 +31,7 @@ public class FileCreateRequest extends BaseRunnable
 	public void run() 
 	{
 		Document doc = new Document();
-		doc.append("comand", Command.FILE_CREATE_REQUEST.toString());
+		doc.append("command", "fasdfas");
 		doc.append("fileDescriptor", fileSystemEvent.fileDescriptor.toDoc());
 		doc.append("pathName", fileSystemEvent.pathName);
 		

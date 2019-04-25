@@ -181,8 +181,7 @@ public abstract class Connection {
                     System.out.println("Received: " + doc.toJson());
 
                     if (doc.getString("command") == null) {
-                        System.out.println(1);
-                        background.submit(new InvalidProtocol(output, "message must contain a command field as string"));
+                        background.submit(new InvalidProtocol(output, "message must contain command key"));
                         closeConnection();
                         return;
                     }
