@@ -8,4 +8,5 @@ doc/
 .classpath
 .project
 .settings
-configuration.properties
+config*
+share/

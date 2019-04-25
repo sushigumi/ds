@@ -14,10 +14,8 @@ import java.util.ArrayList;
 
 public class FileModifyResponse extends BaseRunnable {
 
-	private DataOutputStream output;
 	private FileSystemManager fileSystemManager;
 	private Document received;
-	private FileSystemManager.FileSystemEvent fileSystemEvent;
 
 	public FileModifyResponse(DataOutputStream output, Document received, FileSystemManager fileSystemManager) {
 		super(output);
