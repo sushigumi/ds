@@ -3,13 +3,19 @@ package unimelb.bitbox.connection;
 import unimelb.bitbox.runnables.DirectoryCreateResponse;
 import unimelb.bitbox.runnables.DirectoryDeleteRequest;
 import unimelb.bitbox.runnables.DirectoryDeleteResponse;
-import unimelb.bitbox.messages.Commands;
+import unimelb.bitbox.messages.Command;
+import unimelb.bitbox.messages.InvalidProtocolType;
+import unimelb.bitbox.messages.MessageGenerator;
+import unimelb.bitbox.runnables.ConstructFile;
+import unimelb.bitbox.runnables.FileBytesResponse;
+import unimelb.bitbox.runnables.InvalidProtocol;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -34,8 +40,11 @@ public abstract class Connection {
     ExecutorService sender;
     ExecutorService background;
 
-    private FileSystemManager fileSystemManager;
-    
+    FileSystemManager fileSystemManager;
+
+    //TODO might need hashmap here to count the number of files needed to receive if not done in one sitting
+    //TODO updating while bytes response comes in
+
     /**
      * Called when receiving a connection from another peer
      * Only when receiving a connection do we add to the counter of connections based on the
@@ -51,7 +60,6 @@ public abstract class Connection {
         createWriterAndReader();
 
         this.listener = Executors.newSingleThreadExecutor();
-
 
         // Create the single thread executor to send messages based on a queue when it requires messages to be
         // sent
@@ -89,9 +97,37 @@ public abstract class Connection {
         }
     }
 
-    public void submitSender(Runnable runnable) {
-        sender.submit(runnable);
+    /**
+     * Accepts a FileSystemEvent as an argument and constructs an appropriate Runnable to be submitted
+     * to the sender ExecutorService
+     * @param fileSystemEvent
+     */
+    public void submitEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
+        switch (fileSystemEvent.event) {
+            case FILE_CREATE:
+                String request = MessageGenerator.genFileBytesRequests(fileSystemEvent.fileDescriptor.toDoc(), fileSystemEvent.pathName).remove(0);
+                // TODO change to sending FILE_CREATE_REQUEST
+                sender.submit(new FileBytesResponse(output, fileSystemManager, Document.parse(request)));
+                break;
+        }
+
     }
+
+    /**
+     * Calls generateSyncEvents method of the File System Manager to synchronize files between all peers
+     * at the start of the connection.
+     * This method is only called at the start of each connection since further synchronized events will
+     * be generated collectively for all other events in the main loop
+     */
+    void initSyncPeers() {
+        ArrayList<FileSystemManager.FileSystemEvent> fileSystemEvents = fileSystemManager.generateSyncEvents();
+        // For each file system event send an appropriate message to the connected peer
+        for (FileSystemManager.FileSystemEvent event : fileSystemEvents) {
+            submitEvent(event);
+        }
+    }
+
+
 
     class Listener implements Runnable {
 
@@ -103,19 +139,30 @@ public abstract class Connection {
 
                     Document doc = Document.parse(in);
 
-                    Commands command = Commands.valueOf(doc.getString("command"));
+                    System.out.println("Received: " + doc.toJson());
 
-                    switch (command){
+                    Command command = Command.fromString(doc.getString("command"));
+                    // TODO switch here
+                    switch (command) {
+                        case FILE_BYTES_REQUEST:
+                            background.submit(new FileBytesResponse(output, fileSystemManager, doc));
+                            break;
+
+                        case FILE_BYTES_RESPONSE:
+                            background.submit(new ConstructFile(output, fileSystemManager, doc));
+                            break;
+                        
                         case DIRECTORY_DELETE_REQUEST:
                             background.submit(new DirectoryDeleteResponse(output, fileSystemManager, doc));
                             break;
                         case DIRECTORY_CREATE_REQUEST:
                             background.submit(new DirectoryCreateResponse(output, fileSystemManager, doc));
                             break;
+                        
+
+                        default:
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.INVALID_COMMAND));
                     }
-
-
-                    System.out.println(in);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
