@@ -1,6 +1,6 @@
 package unimelb.bitbox.connection;
 
-import unimelb.bitbox.messages.Commands;
+import unimelb.bitbox.messages.Command;
 import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
@@ -10,7 +10,6 @@ import unimelb.bitbox.util.HostPort;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class IncomingConnection extends Connection {
     public IncomingConnection(FileSystemManager fileSystemManager, Socket socket, HostPort localHostPort) {
@@ -37,7 +36,7 @@ public class IncomingConnection extends Connection {
                 String command = message.getString("command");
 
                 // If it is a HANDSHAKE_REQUEST then send a HANDSHAKE_RESPONSE, else send an INVALID_PROTOCOL
-                if (command.equals(Commands.HANDSHAKE_REQUEST.toString())) {
+                if (command.equals(Command.HANDSHAKE_REQUEST.toString())) {
                     HostPort remoteHostPort = new HostPort((Document)message.get("hostPort"));
                     // If the maximum number of incoming connections has been reached, reject the connection
                     // else accept the connection
@@ -47,6 +46,9 @@ public class IncomingConnection extends Connection {
 
                         // Increment the number of incoming connections in the Connection Manager
                         ConnectionManager.getInstance().connectedPeer(remoteHostPort, true);
+
+                        // TODO Call generate sync events here and sent appropriate messages
+                        initSyncPeers();
                     } else {
                         // Send a CONNECTION_REFUSED message here
                         sendMessage(MessageGenerator.genConnectionRefused(ConnectionManager.getInstance().getPeers()));

@@ -1,6 +1,6 @@
 package unimelb.bitbox.connection;
 
-import unimelb.bitbox.messages.Commands;
+import unimelb.bitbox.messages.Command;
 import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
@@ -11,7 +11,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class OutgoingConnection extends Connection {
     private ArrayList<HostPort> toConnect;
@@ -55,15 +54,16 @@ public class OutgoingConnection extends Connection {
                     String command = response.getString("command");
 
                     // Connected so just exit this and proceed to listen for file events
-                    if (command.equals(Commands.HANDSHAKE_RESPONSE.toString())) {
+                    if (command.equals(Command.HANDSHAKE_RESPONSE.toString())) {
                         ConnectionManager.getInstance().connectedPeer(remoteHostPort, false);
                         listener.submit(new Listener());
                         toConnect.clear(); // Clear to connect since already connected
+                        initSyncPeers();
                         return;
                     }
                     // Connection refused
                     // Add the peers to connect to end of the queue to simulate breadth-first search of peers
-                    else if (command.equals(Commands.CONNECTION_REFUSED.toString())) {
+                    else if (command.equals(Command.CONNECTION_REFUSED.toString())) {
                         // If Connection is refused, start a new connection to the other peers
                         // Close the current socket first
                         // TODO maybe a try-catch here
