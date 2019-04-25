@@ -18,7 +18,7 @@ public class MessageValidator {
         if (doc.get("fileDescriptor") == null) {
         	return "fileDescriptor";       	
         }
-        if (fileDescriptor.get("md5") == null) {
+        if (fileDescriptor.getString("md5") == null) {
         	return "md5";
         }
         //not so sure

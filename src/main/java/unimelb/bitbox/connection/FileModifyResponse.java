@@ -38,7 +38,7 @@ public class FileModifyResponse extends BaseRunnable {
 			sendMessage(doc.toJson());
 		}
 		//if file content does not already exist then print a notification and stop the loop
-		else if (!fileSystemManager.fileNameExists(pathName, fileDescriptor.getString("md5"))) {
+		else if (fileSystemManager.fileNameExists(pathName, fileDescriptor.getString("md5"))) {
 			doc.append("message", "filepath does not exist");
 			doc.append("status", false);
 			sendMessage(doc.toJson());
