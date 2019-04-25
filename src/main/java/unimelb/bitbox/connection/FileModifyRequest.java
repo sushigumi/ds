@@ -1,21 +1,26 @@
+package unimelb.bitbox.connection;
+
+import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.w3c.dom.Document;
+
+import unimelb.bitbox.util.Document;
+import unimelb.bitbox.util.FileSystemManager;
 
 public class FileModifyRequest implements Runnable {
-	private DataOutPutStreams output;
-	private FileSystemEvent fileSystenEvent;
+	private DataOutputStream output;
+	private FileSystemManager.FileSystemEvent fileSystemEvent;
 	
-	public FileModifyRequest (DataOutputStream output, FileSystemEvent fileSystemEvent) {
+	public FileModifyRequest (DataOutputStream output, FileSystemManager.FileSystemEvent fileSystemEvent) {
 		this.output= output;
-		this.fileSystenEvent=fileSystenEvent;
+		this.fileSystemEvent=fileSystemEvent;
 	}
 	
 	public void run () {
 		Document doc = new Document();
 		doc.append("command","FILE_MODIFY_REQUESTE");
-		doc.append("fileDescriptor",fileSystenEvent.fileDescriptor.toDoc());
-		doc.append("pathName"£¬fileSystemEvent.pathName);
+		doc.append("fileDescriptor",fileSystemEvent.fileDescriptor.toDoc());
+		doc.append("pathName", fileSystemEvent.pathName);
 		
 		try {
 			output.writeUTF(doc.toJson());
