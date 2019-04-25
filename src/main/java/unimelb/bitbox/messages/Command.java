@@ -33,6 +33,9 @@ public enum Command {
      * @return
      */
     public static Command fromString(String val) {
+        if (val == null) {
+            return null;
+        }
         return valueOf(val);
     }
 }

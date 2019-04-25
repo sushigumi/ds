@@ -181,7 +181,7 @@ public abstract class Connection {
                     System.out.println("Received: " + doc.toJson());
 
                     Command command = Command.fromString(doc.getString("command"));
-                    
+
                     if (command == null) {
                         System.out.println(1);
                     	background.submit(new InvalidProtocol(output, "message must contain a command field as string"));
@@ -210,7 +210,7 @@ public abstract class Connection {
                                 }
                         	    break;
 
-                   	
+
                             case FILE_DELETE_REQUEST:
                             	String deleteRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
                                 if (deleteRequest != null) {
@@ -218,11 +218,11 @@ public abstract class Connection {
                                     closeConnection();
                                     return;
                                 }
-                                else { 
+                                else {
                     	            background.submit(new FileDeleteResponse(output, doc, fileSystemManager));
                                 }
                     	        break;
-                    	    
+
                             case FILE_DELETE_RESPONSE:
                             	String deleteResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
                                 if (deleteResponse != null) {
@@ -231,7 +231,7 @@ public abstract class Connection {
                                     return;
                                 }
                         	    break;
-                    	
+
                             case FILE_MODIFY_REQUEST:
                             	String modifyRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
                                 if (modifyRequest != null) {
@@ -239,11 +239,11 @@ public abstract class Connection {
                                     closeConnection();
                                     return;
                                 }
-                                else { 
+                                else {
                         	        background.submit(new FileModifyResponse(output, doc, fileSystemManager));
                                     }
                     	        break;
-                                   
+
                             case FILE_MODIFY_RESPONSE:
                             	String modifyResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
                                 if (modifyResponse != null) {
@@ -251,8 +251,8 @@ public abstract class Connection {
                                     closeConnection();
                                     return;
                                 }
-                    	        break;	
-                    
+                    	        break;
+
                             case FILE_BYTES_REQUEST:
                             	String bytesRequest = MessageValidator.getInstance().validateFileBytesRequest(doc);
                                 if (bytesRequest != null) {
@@ -260,7 +260,7 @@ public abstract class Connection {
                                     closeConnection();
                                     return;
                                 }
-                                else { 
+                                else {
                                     background.submit(new FileBytesResponse(output, fileSystemManager, doc));
                                     }
                                 break;
@@ -272,11 +272,11 @@ public abstract class Connection {
                                     closeConnection();
                                     return;
                                 }
-                                else { 
+                                else {
                                     background.submit(new ConstructFile(output, fileSystemManager, doc));
                                     }
                                 break;
-                    	    
+
                             case DIRECTORY_CREATE_REQUEST:
                             	String dirCreateRequest = MessageValidator.getInstance().validateDirectoryChangeRequest(doc);
                                 if (dirCreateRequest != null) {
@@ -284,11 +284,11 @@ public abstract class Connection {
                                     closeConnection();
                                     return;
                                 }
-                                else { 
+                                else {
                             	    background.submit(new DirectoryCreateResponse(output, fileSystemManager, doc));
                             	}
                                 break;
-                            
+
                             case DIRECTORY_CREATE_RESPONSE:
                             	String dirCteateResponse = MessageValidator.getInstance().validateDirectoryChangeResponse(doc);
                                 if (dirCteateResponse != null) {
@@ -296,8 +296,8 @@ public abstract class Connection {
                                     closeConnection();
                                     return;
                                 }
-                    	        break;	
-                        
+                    	        break;
+
                             case DIRECTORY_DELETE_REQUEST:
                             	String dirDeleteRequest = MessageValidator.getInstance().validateDirectoryChangeRequest(doc);
                                 if (dirDeleteRequest != null) {
@@ -309,7 +309,7 @@ public abstract class Connection {
                                     background.submit(new DirectoryDeleteResponse(output, fileSystemManager, doc));
                                 }
                                 break;
-                            
+
                             case DIRECTORY_DELETE_RESPONSE:
                             	String dirDeleteResponse = MessageValidator.getInstance().validateDirectoryChangeResponse(doc);
                                 if (dirDeleteResponse != null) {
@@ -317,8 +317,8 @@ public abstract class Connection {
                                     closeConnection();
                                     return;
                                 }
-                        	    break;	
-                      	    
+                        	    break;
+
                             default:
                                 background.submit(new InvalidProtocol(output, InvalidProtocolType.INVALID_COMMAND));
                                 closeConnection();
