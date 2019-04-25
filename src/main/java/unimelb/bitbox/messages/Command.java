@@ -33,6 +33,9 @@ public enum Command {
      * @return
      */
     public static Command fromString(String val) {
+        if (val.contains("_")) {
+            return valueOf(val);
+        }
         String enumRep = val.replace(' ', '_');
         return valueOf(enumRep);
     }
