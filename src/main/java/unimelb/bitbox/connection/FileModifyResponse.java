@@ -37,15 +37,9 @@ public class FileModifyResponse extends BaseRunnable {
 			doc.append("status", "false");
 			sendMessage(doc.toJson());
 		}
-		//if pathName does not exist then print a notification and stop the loop
-		else if (!(fileSystemManager.dirNameExists(pathName))) {
-			doc.append("message", "pathname does not exist");
-			doc.append("status", "false");
-			sendMessage(doc.toJson());
-		}
 		//if file content already exist then print a notification and stop the loop
 		else if (fileSystemManager.fileNameExists(pathName, fileDescriptor.getString("md5"))) {
-			doc.append("message", "unsafe pathname given");
+			doc.append("message", "filepath does not exist");
 			doc.append("status", "false");
 			sendMessage(doc.toJson());
 		} else {
