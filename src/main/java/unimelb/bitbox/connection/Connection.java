@@ -3,6 +3,8 @@ package unimelb.bitbox.connection;
 import unimelb.bitbox.runnables.DirectoryCreateResponse;
 import unimelb.bitbox.runnables.DirectoryDeleteRequest;
 import unimelb.bitbox.runnables.DirectoryDeleteResponse;
+import unimelb.bitbox.eventprocess.FileCreateResponse;
+import unimelb.bitbox.eventprocess.FileDeleteResponse;
 import unimelb.bitbox.messages.Command;
 import unimelb.bitbox.messages.InvalidProtocolType;
 import unimelb.bitbox.messages.MessageGenerator;
@@ -144,6 +146,26 @@ public abstract class Connection {
                     Command command = Command.fromString(doc.getString("command"));
                     // TODO switch here
                     switch (command) {
+                        case FILE_CREATE_REQUEST:
+                    	    background.submit(new FileCreateResponse(output, doc, fileSystemManager));
+                    	    break;
+                    	    
+                        case FILE_CREATE_RESPONSE:
+                        	break;
+                   	
+                        case FILE_DELETE_REQUEST:
+                    	    background.submit(new FileDeleteResponse(output, doc, fileSystemManager));
+                    	    break;
+                    	    
+                        case FILE_DELETE_RESPONSE:
+                        	break;
+                    	
+                        case FILE_MODIFY_REQUEST:
+                    	    break;
+                                   
+                        case FILE_MODIFY_RESPONSE:
+                    	    break;	
+                    
                         case FILE_BYTES_REQUEST:
                             background.submit(new FileBytesResponse(output, fileSystemManager, doc));
                             break;
@@ -151,15 +173,21 @@ public abstract class Connection {
                         case FILE_BYTES_RESPONSE:
                             background.submit(new ConstructFile(output, fileSystemManager, doc));
                             break;
+                    	    
+                        case DIRECTORY_CREATE_REQUEST:
+                            background.submit(new DirectoryCreateResponse(output, fileSystemManager, doc));
+                            break;
+                            
+                        case DIRECTORY_CREATE_RESPONSE:
+                            break;
                         
                         case DIRECTORY_DELETE_REQUEST:
                             background.submit(new DirectoryDeleteResponse(output, fileSystemManager, doc));
                             break;
-                        case DIRECTORY_CREATE_REQUEST:
-                            background.submit(new DirectoryCreateResponse(output, fileSystemManager, doc));
-                            break;
-                        
-
+                            
+                        case DIRECTORY_DELETE_RESPONSE:
+                    	    break;	
+                    	    
                         default:
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.INVALID_COMMAND));
                     }
