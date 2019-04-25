@@ -7,12 +7,12 @@ import java.io.IOException;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 
-public class FileModifyRequest implements Runnable {
+public class FileModifyRequest extends BaseRunnable {
 	private DataOutputStream output;
 	private FileSystemManager.FileSystemEvent fileSystemEvent;
 	
 	public FileModifyRequest (DataOutputStream output, FileSystemManager.FileSystemEvent fileSystemEvent) {
-		this.output= output;
+		super(output);
 		this.fileSystemEvent=fileSystemEvent;
 	}
 	
@@ -22,12 +22,7 @@ public class FileModifyRequest implements Runnable {
 		doc.append("fileDescriptor",fileSystemEvent.fileDescriptor.toDoc());
 		doc.append("pathName", fileSystemEvent.pathName);
 		
-		try {
-			output.writeUTF(doc.toJson());
-			output.flush();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		sendMessage(doc.toJson());
 	}
 	
 	
