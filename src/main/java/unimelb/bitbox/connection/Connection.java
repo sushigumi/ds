@@ -1,5 +1,9 @@
 package unimelb.bitbox.connection;
 
+import unimelb.bitbox.runnables.DirectoryCreateResponse;
+import unimelb.bitbox.runnables.DirectoryDeleteRequest;
+import unimelb.bitbox.runnables.DirectoryDeleteResponse;
+import unimelb.bitbox.messages.Commands;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
@@ -8,7 +12,6 @@ import java.io.*;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Represents a TCP connection between two peers.
@@ -48,7 +51,7 @@ public abstract class Connection {
         createWriterAndReader();
 
         this.listener = Executors.newSingleThreadExecutor();
-        this.sender = Executors.newSingleThreadExecutor();
+
 
         // Create the single thread executor to send messages based on a queue when it requires messages to be
         // sent
@@ -99,6 +102,18 @@ public abstract class Connection {
                     String in = input.readUTF();
 
                     Document doc = Document.parse(in);
+
+                    Commands command = Commands.valueOf(doc.getString("command"));
+
+                    switch (command){
+                        case DIRECTORY_DELETE_REQUEST:
+                            background.submit(new DirectoryDeleteResponse(output, fileSystemManager, doc));
+                            break;
+                        case DIRECTORY_CREATE_REQUEST:
+                            background.submit(new DirectoryCreateResponse(output, fileSystemManager, doc));
+                            break;
+                    }
+
 
                     System.out.println(in);
                 }
