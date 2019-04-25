@@ -34,13 +34,13 @@ public class FileModifyResponse extends BaseRunnable {
 		//if pathName is not a safePathName then print a notification and stop the loop
 		if (!(fileSystemManager.isSafePathName(pathName))) {
 			doc.append("message", "unsafe pathname given");
-			doc.append("status", "false");
+			doc.append("status", false);
 			sendMessage(doc.toJson());
 		}
 		//if file content already exist then print a notification and stop the loop
 		else if (fileSystemManager.fileNameExists(pathName, fileDescriptor.getString("md5"))) {
 			doc.append("message", "filepath does not exist");
-			doc.append("status", "false");
+			doc.append("status", false);
 			sendMessage(doc.toJson());
 		} else {
 			try {
@@ -48,7 +48,7 @@ public class FileModifyResponse extends BaseRunnable {
 						fileDescriptor.getString("md5"),
 						fileDescriptor.getLong("lastModified"))) {
 					doc.append("message", "file loader ready");
-					doc.append("status", "true");
+					doc.append("status", true);
 					sendMessage(doc.toJson());
 					if (!fileSystemManager.checkShortcut(pathName)) {
 						ArrayList<String> messages = MessageGenerator.genFileBytesRequests(fileDescriptor, pathName);
@@ -60,7 +60,10 @@ public class FileModifyResponse extends BaseRunnable {
 					}
 
 
-				}
+				} else{
+				    doc.append("message", "filePath being modified");
+				    doc.append("status", true);
+                }
 			} catch (NoSuchAlgorithmException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
