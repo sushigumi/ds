@@ -79,6 +79,41 @@ public class MessageGenerator {
         return doc.toJson();
     }
 
+
+    public static String genDirectoryDeleteRequest(String pathName){
+        Document doc = new Document();
+        doc.append("command",Commands.DIRECTORY_DELETE_REQUEST.toString());
+        doc.append("pathName",pathName);
+
+        return doc.toJson();
+    }
+
+    public static String genDirectoryDeleteResponse(FileSystemManager fileSystemManager, String pathName){
+        Document doc = new Document();
+        doc.append("command", Commands.DIRECTORY_DELETE_RESPONSE.toString());
+        doc.append("pathName", pathName);
+
+        if(fileSystemManager.deleteDirectory(pathName)) {
+            doc.append("message", "directory deleted");
+            doc.append("status", true);
+        }
+        else if(!fileSystemManager.dirNameExists(pathName)){
+            doc.append("message", "pathname does not exist");
+            doc.append("status", true);
+        }
+        else if(!fileSystemManager.isSafePathName(pathName)){
+            doc.append("message", "unsafe pathname given");
+            doc.append("status", false);
+        }
+
+        return doc.toJson();
+    }
+
+    public static String genDirectoryCreateRequest(String pathName){
+        Document doc = new Document();
+        doc.append("command", Commands.DIRECTORY_CREATE_REQUEST.toString());
+        doc.append("pathName", pathName);
+
     /**
      * Generates a list of strings that represent file bytes requests
      * A list of strings is used since a large file needs to be broken up into many other smaller chunks
@@ -155,6 +190,22 @@ public class MessageGenerator {
         return doc.toJson();
     }
 
+    public static String genDirectoryCreateResponse(FileSystemManager fileSystemManager, String pathName){
+        Document doc = new Document();
+        doc.append("command", Commands.DIRECTORY_CREATE_RESPONSE.toString());
+        doc.append("pathName", pathName);
+
+        if(fileSystemManager.dirNameExists(pathName)){
+            doc.append("message", "pathname already exists");
+            doc.append("status", false);
+        }
+        else if(!fileSystemManager.isSafePathName(pathName)){
+            doc.append("message", "unsafe pathname given");
+            doc.append("status", false);
+        }
+        else if(fileSystemManager.makeDirectory(pathName)) {
+            doc.append("message", "directory created");
+            doc.append("status", true);
 
     /**
      * Generates a string which represents a file bytes response message which sends the correct bytes of
