@@ -1,5 +1,7 @@
 package unimelb.bitbox.eventprocess;
 import java.io.DataOutputStream;
+
+import unimelb.bitbox.messages.Command;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
@@ -10,24 +12,28 @@ import unimelb.bitbox.util.FileSystemManager;
  */
 public class FileDeleteResponse extends BaseRunnable
 {
-	private Document doc;
+	private Document received;
 	private FileSystemManager fileSystemManager;
 
 	
-	public FileDeleteResponse(DataOutputStream output, Document doc, 
+	public FileDeleteResponse(DataOutputStream output, Document received,
 			FileSystemManager fileSystemManager) 
 	{
 		super(output);
-		this.doc = doc;
+		this.received = received;
 		this.fileSystemManager = fileSystemManager;
 	}
 	
 	@Override
 	public void run() 
 	{
-		String pathName = doc.getString("pathName");
-		Document fileDescriptor = (Document)doc.get("fileDescriptor");
-		
+		String pathName = received.getString("pathName");
+		Document fileDescriptor = (Document)received.get("fileDescriptor");
+
+		Document doc = new Document();
+		doc.append("command", Command.FILE_DELETE_RESPONSE.toString());
+		doc.append("fileDescriptor", fileDescriptor);
+		doc.append("pathName", pathName);
 
 		if(!fileSystemManager.isSafePathName(pathName))
 		{
