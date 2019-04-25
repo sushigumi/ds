@@ -5,51 +5,71 @@ import unimelb.bitbox.util.FileSystemManager;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 
 
-public class FileModifyResponse implements Runnable{
+public class FileModifyResponse extends Baserunnable{
 	
 	private DataOutputStream output;
 	private FileSystemManager fileSystemManager;
 	private FileSystemManager.FileSystemEvent fileSystemEvent;
 	
-	public FileModifyResponse (DataOutputStream output, FileSystemManager fileSystemManager, FileSystemManager.FileSystemEvent fileSystemEvent) {
-		this.output= output;
-		this.fileSystemEvent =fileSystemEvent;
+	public FileModifyResponse (DataOutputStream output,Document doc, FileSystemManager fileSystemManager ) {
+		super(output);
+		this.doc=doc;
+		this.fileSystemManager =fileSystemManager;
 	}
 	
 	public void run () {
-		while (true) {	
+			Document doc = new Document();
 			//if pathName is not a safePathName then print a notification and stop the loop
 			if(!(fileSystemManager.isSafePathName(fileSystemEvent.pathName))) {
-				System.out.println("unsafe pathname given");
-				break;
-			}
+				doc.append("message","unsafe pathname given");
+				doc.append("status","false");
+				sendMessage(doc.toJson());
+				}
 			//if pathName does not exist then print a notification and stop the loop
-			if(!(fileSystemManager.dirNameExists(fileSystemEvent.pathName))) {
-				System.out.println("pathname does not exist");
-				break;
-			}
+			else if(!(fileSystemManager.dirNameExists(fileSystemEvent.pathName))) {
+				doc.append("message","pathname does not exist");
+				doc.append("status","false");
+				sendMessage(doc.toJson());
+				}
 			//if file content already exist then print a notification and stop the loop
-			if(fileSystemManager.fileNameExists(fileSystemEvent.pathName,fileSystemEvent.fileDescriptor.md5)) {
-				System.out.println("already exists with matching content");
-				break;
+			else if(fileSystemManager.fileNameExists(fileSystemEvent.pathName,fileSystemEvent.fileDescriptor.md5)) {
+				doc.append("message","unsafe pathname given");
+				doc.append("status","false");
+				sendMessage(doc.toJson());
+				}
+			else {		{
+				try {
+					if(fileSystemManager.modifyFileLoader(pathName, 
+							fileDescriptor.getString("md5"),fileDescriptor.getLong("filesize"),
+							fileDescriptor.getLong("lastModified"))){
+					    doc.append("message", "file loader ready");
+					    doc.append("status", "true");
+					    sendMessage(doc.toJson());
+					    if(!fileSystemManager.checkShortcut(pathName))
+					    {
+					    	   ArrayList<String> messages = MessageGenerator.genFileBytesRequests(fileDescriptor, pathName);
+
+					           for (String message : messages) {
+					               sendMessage(message);
+					           }
+					    	
+					    }
+					    
+					
+					}
+				} catch (NoSuchAlgorithmException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
+
+		
 			
-			Document doc = new Document();
-			doc.append("command:","FILE_MODIFY_RESPONSE");
-			doc.append("fileDescriptor:", fileSystemEvent.fileDescriptor.toDoc());
-			doc.append("pathName:",fileSystemEvent.pathName);
-			doc.append("message:","file loader ready");
-			doc.append("statue:","true");
-			
-			try {
-				output.writeUTF(doc.toJson());
-				output.flush();
-			} catch (IOException e) {
-				e.printStackTrace();
-				}  break;
-		}
 	}
- 
-}
