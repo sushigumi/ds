@@ -7,6 +7,7 @@ import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
@@ -26,7 +27,7 @@ public class OutgoingConnection extends Connection {
     }
 
     private class Handshake extends BaseRunnable {
-        Handshake(DataOutputStream output) {
+        Handshake(BufferedWriter output) {
             super(output);
         }
 
@@ -48,7 +49,7 @@ public class OutgoingConnection extends Connection {
 
                     sendMessage(MessageGenerator.genHandshakeRequest(localHostPort));
 
-                    Document response = Document.parse(input.readUTF());
+                    Document response = Document.parse(input.readLine());
                     //System.out.println(response.toJson());
 
                     String command = response.getString("command");

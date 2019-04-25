@@ -7,6 +7,7 @@ import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
@@ -20,7 +21,7 @@ public class IncomingConnection extends Connection {
     }
 
     private class Handshake extends BaseRunnable {
-        Handshake(DataOutputStream output) {
+        Handshake(BufferedWriter output) {
             super(output);
         }
 
@@ -31,7 +32,7 @@ public class IncomingConnection extends Connection {
             // TODO retry mechanism?
             // Wait for a handshake request to come
             try {
-                Document message = Document.parse(input.readUTF());
+                Document message = Document.parse(input.readLine());
                 //System.out.println(message.toJson());
                 String command = message.getString("command");
 
