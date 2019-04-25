@@ -31,6 +31,10 @@ public class FileCreateResponse extends BaseRunnable
 	@Override
 	public void run() 
 	{
+		// Check for errors
+
+
+
 		String pathName = received.getString("pathName");
 		Document fileDescriptor = (Document)received.get("fileDescriptor");
 
