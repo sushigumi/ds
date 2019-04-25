@@ -93,16 +93,21 @@ public class MessageGenerator {
         doc.append("command", Command.DIRECTORY_DELETE_RESPONSE.toString());
         doc.append("pathName", pathName);
 
-        if(fileSystemManager.deleteDirectory(pathName)) {
-            doc.append("message", "directory deleted");
-            doc.append("status", true);
-        }
-        else if(!fileSystemManager.dirNameExists(pathName)){
+
+        if(!fileSystemManager.dirNameExists(pathName)){
             doc.append("message", "pathname does not exist");
             doc.append("status", true);
         }
         else if(!fileSystemManager.isSafePathName(pathName)){
             doc.append("message", "unsafe pathname given");
+            doc.append("status", false);
+        }
+        else if(fileSystemManager.deleteDirectory(pathName)) {
+            doc.append("message", "directory deleted");
+            doc.append("status", true);
+        }
+        else {
+            doc.append("message", "there was a problem deleting the directory");
             doc.append("status", false);
         }
 
@@ -207,6 +212,9 @@ public class MessageGenerator {
         } else if (fileSystemManager.makeDirectory(pathName)) {
             doc.append("message", "directory created");
             doc.append("status", true);
+        } else {
+            doc.append("message", "there was a problem creating the directory");
+            doc.append("status", false);
         }
 
         return doc.toJson();
