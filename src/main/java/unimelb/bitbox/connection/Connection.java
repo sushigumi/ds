@@ -153,7 +153,7 @@ public abstract class Connection {
         }
     }
 
-    private void closeConnection() {
+    void closeConnection() {
         try {
             socket.close();
         } catch (IOException e) {
