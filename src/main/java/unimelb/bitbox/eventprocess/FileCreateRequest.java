@@ -5,7 +5,7 @@ package unimelb.bitbox.eventprocess;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 
-import unimelb.bitbox.messages.Command;
+import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager.FileSystemEvent;
@@ -31,7 +31,7 @@ public class FileCreateRequest extends BaseRunnable
 	public void run() 
 	{
 		Document doc = new Document();
-		doc.append("command", "fasdfas");
+		doc.append("command", Messages.FILE_CREATE_REQUEST);
 		doc.append("fileDescriptor", fileSystemEvent.fileDescriptor.toDoc());
 		doc.append("pathName", fileSystemEvent.pathName);
 		

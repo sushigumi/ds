@@ -1,9 +1,8 @@
 package unimelb.bitbox.runnables;
 
-import unimelb.bitbox.messages.MessageGenerator;
+import unimelb.bitbox.messages.Messages;
 
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 
 public class DirectoryCreateRequest extends BaseRunnable {
 
@@ -17,7 +16,7 @@ public class DirectoryCreateRequest extends BaseRunnable {
     @Override
     public void run() {
 
-        sendMessage(MessageGenerator.genDirectoryCreateRequest(pathName));
+        sendMessage(Messages.genDirectoryCreateRequest(pathName));
 
     }
 }

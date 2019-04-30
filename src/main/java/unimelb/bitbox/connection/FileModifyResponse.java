@@ -1,7 +1,6 @@
 package unimelb.bitbox.connection;
 
-import unimelb.bitbox.messages.Command;
-import unimelb.bitbox.messages.MessageGenerator;
+import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
@@ -28,7 +27,7 @@ public class FileModifyResponse extends BaseRunnable {
 		Document fileDescriptor = (Document) received.get("fileDescriptor");
 
 		Document doc = new Document();
-		doc.append("command", Command.FILE_MODIFY_RESPONSE.toString());
+		doc.append("command", Messages.FILE_MODIFY_RESPONSE);
 		doc.append("fileDescriptor", fileDescriptor);
 		doc.append("pathName", pathName);
 		//if pathName is not a safePathName then print a notification and stop the loop
@@ -51,7 +50,7 @@ public class FileModifyResponse extends BaseRunnable {
 					doc.append("status", true);
 					sendMessage(doc.toJson());
 					if (!fileSystemManager.checkShortcut(pathName)) {
-						ArrayList<String> messages = MessageGenerator.genFileBytesRequests(fileDescriptor, pathName);
+						ArrayList<String> messages = Messages.genFileBytesRequests(fileDescriptor, pathName);
 
 						for (String message : messages) {
 							sendMessage(message);

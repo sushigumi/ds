@@ -1,6 +1,7 @@
 package unimelb.bitbox.connection;
 
 import unimelb.bitbox.messages.MessageValidator;
+import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.runnables.DirectoryCreateResponse;
 import unimelb.bitbox.runnables.DirectoryDeleteRequest;
 import unimelb.bitbox.runnables.DirectoryDeleteResponse;
@@ -9,9 +10,7 @@ import unimelb.bitbox.eventprocess.FileCreateResponse;
 import unimelb.bitbox.eventprocess.FileDeleteRequest;
 import unimelb.bitbox.eventprocess.FileDeleteResponse;
 import unimelb.bitbox.runnables.*;
-import unimelb.bitbox.messages.Command;
 import unimelb.bitbox.messages.InvalidProtocolType;
-import unimelb.bitbox.messages.MessageGenerator;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
@@ -119,7 +118,7 @@ public abstract class Connection {
         switch (fileSystemEvent.event) {
             /*
             case FILE_CREATE:
-                String request = MessageGenerator.genFileBytesRequests(fileSystemEvent.fileDescriptor.toDoc(), fileSystemEvent.pathName).remove(0);
+                String request = Messages.genFileBytesRequests(fileSystemEvent.fileDescriptor.toDoc(), fileSystemEvent.pathName).remove(0);
                 // TODO change to sending FILE_CREATE_REQUEST
                 sender.submit(new FileBytesResponse(output, fileSystemManager, Document.parse(request)));
                 break;
@@ -186,10 +185,10 @@ public abstract class Connection {
                         return;
                     }
 
-                    Command command = Command.fromString(doc.getString("command"));
+                    String command = doc.getString("command");
 
                     switch (command) {
-                        case FILE_CREATE_REQUEST:
+                        case Messages.FILE_CREATE_REQUEST:
                             String createRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
                             if (createRequest != null) {
                                 background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, createRequest));
@@ -201,7 +200,7 @@ public abstract class Connection {
                             }
                             break;
 
-                        case FILE_CREATE_RESPONSE:
+                        case Messages.FILE_CREATE_RESPONSE:
                             String createResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
                             if (createResponse != null) {
                                 background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, createResponse));
@@ -211,7 +210,7 @@ public abstract class Connection {
                             break;
 
 
-                        case FILE_DELETE_REQUEST:
+                        case Messages.FILE_DELETE_REQUEST:
                             String deleteRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
                             if (deleteRequest != null) {
                                 background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, deleteRequest));
@@ -223,7 +222,7 @@ public abstract class Connection {
                             }
                             break;
 
-                        case FILE_DELETE_RESPONSE:
+                        case Messages.FILE_DELETE_RESPONSE:
                             String deleteResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
                             if (deleteResponse != null) {
                                 background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, deleteResponse));
@@ -232,7 +231,7 @@ public abstract class Connection {
                             }
                             break;
 
-                        case FILE_MODIFY_REQUEST:
+                        case Messages.FILE_MODIFY_REQUEST:
                             String modifyRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
                             if (modifyRequest != null) {
                                 background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, modifyRequest));
@@ -244,7 +243,7 @@ public abstract class Connection {
                                 }
                             break;
 
-                        case FILE_MODIFY_RESPONSE:
+                        case Messages.FILE_MODIFY_RESPONSE:
                             String modifyResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
                             if (modifyResponse != null) {
                                 background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, modifyResponse));
@@ -253,7 +252,7 @@ public abstract class Connection {
                             }
                             break;
 
-                        case FILE_BYTES_REQUEST:
+                        case Messages.FILE_BYTES_REQUEST:
                             String bytesRequest = MessageValidator.getInstance().validateFileBytesRequest(doc);
                             if (bytesRequest != null) {
                                 background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, bytesRequest));
@@ -265,7 +264,7 @@ public abstract class Connection {
                                 }
                             break;
 
-                        case FILE_BYTES_RESPONSE:
+                        case Messages.FILE_BYTES_RESPONSE:
                             String bytesResponse = MessageValidator.getInstance().validateFileBytesResponse(doc);
                             if (bytesResponse != null) {
                                 background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, bytesResponse));
@@ -277,7 +276,7 @@ public abstract class Connection {
                                 }
                             break;
 
-                        case DIRECTORY_CREATE_REQUEST:
+                        case Messages.DIRECTORY_CREATE_REQUEST:
                             String dirCreateRequest = MessageValidator.getInstance().validateDirectoryChangeRequest(doc);
                             if (dirCreateRequest != null) {
                                 background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirCreateRequest));
@@ -289,7 +288,7 @@ public abstract class Connection {
                             }
                             break;
 
-                        case DIRECTORY_CREATE_RESPONSE:
+                        case Messages.DIRECTORY_CREATE_RESPONSE:
                             String dirCteateResponse = MessageValidator.getInstance().validateDirectoryChangeResponse(doc);
                             if (dirCteateResponse != null) {
                                 background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirCteateResponse));
@@ -298,7 +297,7 @@ public abstract class Connection {
                             }
                             break;
 
-                        case DIRECTORY_DELETE_REQUEST:
+                        case Messages.DIRECTORY_DELETE_REQUEST:
                             String dirDeleteRequest = MessageValidator.getInstance().validateDirectoryChangeRequest(doc);
                             if (dirDeleteRequest != null) {
                                 background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirDeleteRequest));
@@ -310,7 +309,7 @@ public abstract class Connection {
                             }
                             break;
 
-                        case DIRECTORY_DELETE_RESPONSE:
+                        case Messages.DIRECTORY_DELETE_RESPONSE:
                             String dirDeleteResponse = MessageValidator.getInstance().validateDirectoryChangeResponse(doc);
                             if (dirDeleteResponse != null) {
                                 background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirDeleteResponse));

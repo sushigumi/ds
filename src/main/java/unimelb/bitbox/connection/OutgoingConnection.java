@@ -1,14 +1,12 @@
 package unimelb.bitbox.connection;
 
-import unimelb.bitbox.messages.Command;
-import unimelb.bitbox.messages.MessageGenerator;
+import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -47,15 +45,15 @@ public class OutgoingConnection extends Connection {
                     createWriterAndReader();
                     updateOutput(output);
 
-                    sendMessage(MessageGenerator.genHandshakeRequest(localHostPort));
+                    sendMessage(Messages.genHandshakeRequest(localHostPort));
 
                     Document response = Document.parse(input.readLine());
                     System.out.println(response.toJson());
 
-                    Command command = Command.fromString(response.getString("command"));
+                    String command = response.getString("command");
 
                     // Connected so just exit this and proceed to listen for file events
-                    if (command == Command.HANDSHAKE_RESPONSE) {
+                    if (command == Messages.HANDSHAKE_RESPONSE) {
                         updateRemoteHostPort(remoteHostPort);
                         ConnectionManager.getInstance().connectedPeer(remoteHostPort, false);
                         listener.submit(new Listener());
@@ -65,7 +63,7 @@ public class OutgoingConnection extends Connection {
                     }
                     // Connection refused
                     // Add the peers to connect to end of the queue to simulate breadth-first search of peers
-                    else if (command == Command.CONNECTION_REFUSED) {
+                    else if (command == Messages.CONNECTION_REFUSED) {
                         // If Connection is refused, start a new connection to the other peers
                         // Close the current socket first
                         // TODO maybe a try-catch here
@@ -85,7 +83,7 @@ public class OutgoingConnection extends Connection {
                     // Received an invalid message so send INVALID_PROTOCOL message
                     // TODO add a loop to handle invalid protocol
                     else {
-                        sendMessage(MessageGenerator.genInvalidProtocol("Invalid command. Expecting HANDSHAKE_RESPONSE " +
+                        sendMessage(Messages.genInvalidProtocol("Invalid command. Expecting HANDSHAKE_RESPONSE " +
                                 "or CONNECTION_REFUSED"));
                     }
                 }

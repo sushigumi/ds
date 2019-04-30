@@ -1,11 +1,10 @@
 package unimelb.bitbox.runnables;
 
-import unimelb.bitbox.messages.MessageGenerator;
+import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
@@ -54,7 +53,7 @@ public class ConstructFile extends BaseRunnable {
             // Cannot write the bytes
             catch (IOException e) {
                 Document fileDescriptor = (Document) fileBytesResponse.get("fileDescriptor");
-                sendMessage(MessageGenerator.genFileBytesRequest(fileDescriptor, pathName, position));
+                sendMessage(Messages.genFileBytesRequest(fileDescriptor, pathName, position));
             } catch (NoSuchAlgorithmException e) {
                 e.printStackTrace();
             }

@@ -1,9 +1,8 @@
 package unimelb.bitbox.runnables;
 
-import unimelb.bitbox.messages.MessageGenerator;
+import unimelb.bitbox.messages.Messages;
 
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 
 public class DirectoryDeleteRequest extends BaseRunnable {
 
@@ -17,7 +16,7 @@ public class DirectoryDeleteRequest extends BaseRunnable {
     @Override
     public void run() {
 
-        sendMessage(MessageGenerator.genDirectoryDeleteRequest(pathName));
+        sendMessage(Messages.genDirectoryDeleteRequest(pathName));
     }
 }
 

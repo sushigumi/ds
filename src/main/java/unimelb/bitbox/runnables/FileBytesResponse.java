@@ -1,11 +1,10 @@
 package unimelb.bitbox.runnables;
 
-import unimelb.bitbox.messages.MessageGenerator;
+import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 
 public class FileBytesResponse extends BaseRunnable {
     private FileSystemManager fileSystemManager;
@@ -26,7 +25,7 @@ public class FileBytesResponse extends BaseRunnable {
         long position = fileBytesRequest.getLong("position");
         long length = fileBytesRequest.getLong("length");
 
-        sendMessage(MessageGenerator.genFileBytesResponse(fileSystemManager, fileDescriptor,
+        sendMessage(Messages.genFileBytesResponse(fileSystemManager, fileDescriptor,
                 pathName, position, length));
     }
 }

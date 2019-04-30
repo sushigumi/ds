@@ -15,11 +15,29 @@ import java.util.Base64;
 /**
  * Generates a string which is supposedly the right message to be sent to the peer
  */
-public class MessageGenerator {
+public class Messages {
+    // Commands
+    public static final String INVALID_PROTOCOL = "INVALID_PROTOCOL";
+    public static final String CONNECTION_REFUSED = "CONNECTION_REFUSED";
+    public static final String HANDSHAKE_REQUEST = "HANDSHAKE_REQUEST";
+    public static final String HANDSHAKE_RESPONSE = "HANDSHAKE_RESPONSE";
+    public static final String FILE_CREATE_REQUEST = "FILE_CREATE_REQUEST";
+    public static final String FILE_CREATE_RESPONSE = "FILE_CREATE_RESPONSE";
+    public static final String FILE_DELETE_REQUEST = "FILE_DELETE_REQUEST";
+    public static final String FILE_DELETE_RESPONSE = "FILE_DELETE_RESPONSE";
+    public static final String FILE_MODIFY_REQUEST = "FILE_MODIFY_REQUEST";
+    public static final String FILE_MODIFY_RESPONSE = "FILE_MODIFY_RESPONSE";
+    public static final String DIRECTORY_CREATE_REQUEST = "DIRECTORY_CREATE_REQUEST";
+    public static final String DIRECTORY_CREATE_RESPONSE = "DIRECTORY_CREATE_RESPONSE";
+    public static final String DIRECTORY_DELETE_REQUEST = "DIRECTORY_DELETE_REQUEST";
+    public static final String DIRECTORY_DELETE_RESPONSE = "DIRECTORY_DELETE_RESPONSE";
+    public static final String FILE_BYTES_REQUEST = "FILE_BYTES_REQUEST";
+    public static final String FILE_BYTES_RESPONSE = "FILE_BYTES_RESPONSE";
+
     // Messages to send back
     private static final String CONNECTION_LIMIT_REACHED = "connection limit reached";
 
-    private MessageGenerator() {
+    private Messages() {
     }
 
     /**
@@ -29,7 +47,7 @@ public class MessageGenerator {
      */
     public static String genInvalidProtocol(String message) {
         Document doc = new Document();
-        doc.append("command", Command.INVALID_PROTOCOL.toString());
+        doc.append("command", INVALID_PROTOCOL);
         doc.append("message", message);
 
         return doc.toJson();
@@ -42,7 +60,7 @@ public class MessageGenerator {
      */
     public static String genHandshakeRequest(HostPort localPort) {
         Document doc = new Document();
-        doc.append("command", Command.HANDSHAKE_REQUEST.toString());
+        doc.append("command", HANDSHAKE_REQUEST);
         doc.append("hostPort", localPort.toDoc());
 
         return doc.toJson();
@@ -55,7 +73,7 @@ public class MessageGenerator {
      */
     public static String genHandshakeResponse(HostPort localPort) {
         Document doc = new Document();
-        doc.append("command", Command.HANDSHAKE_RESPONSE.toString());
+        doc.append("command", HANDSHAKE_RESPONSE);
         doc.append("hostPort", localPort.toDoc());
 
         return doc.toJson();
@@ -72,7 +90,7 @@ public class MessageGenerator {
             peersDoc.add(peer.toDoc());
         }
         Document doc = new Document();
-        doc.append("command", Command.CONNECTION_REFUSED.toString());
+        doc.append("command", CONNECTION_REFUSED);
         doc.append("message", CONNECTION_LIMIT_REACHED);
         doc.append("peers", peersDoc);
 
@@ -82,7 +100,7 @@ public class MessageGenerator {
 
     public static String genDirectoryDeleteRequest(String pathName){
         Document doc = new Document();
-        doc.append("command",Command.DIRECTORY_DELETE_REQUEST.toString());
+        doc.append("command", DIRECTORY_DELETE_REQUEST);
         doc.append("pathName",pathName);
 
         return doc.toJson();
@@ -90,7 +108,7 @@ public class MessageGenerator {
 
     public static String genDirectoryDeleteResponse(FileSystemManager fileSystemManager, String pathName){
         Document doc = new Document();
-        doc.append("command", Command.DIRECTORY_DELETE_RESPONSE.toString());
+        doc.append("command", DIRECTORY_DELETE_RESPONSE);
         doc.append("pathName", pathName);
 
 
@@ -116,7 +134,7 @@ public class MessageGenerator {
 
     public static String genDirectoryCreateRequest(String pathName) {
         Document doc = new Document();
-        doc.append("command", Command.DIRECTORY_CREATE_REQUEST.toString());
+        doc.append("command", DIRECTORY_CREATE_REQUEST);
         doc.append("pathName", pathName);
 
         return doc.toJson();
@@ -135,7 +153,7 @@ public class MessageGenerator {
         long fileSize = fileDescriptor.getLong("fileSize");
         for (long i = 0; i <= fileSize; i += blockSize) {
             Document doc = new Document();
-            doc.append("command", Command.FILE_BYTES_REQUEST.toString());
+            doc.append("command", FILE_BYTES_REQUEST);
             doc.append("fileDescriptor", fileDescriptor);
             doc.append("pathName", pathName);
             doc.append("position", i);
@@ -189,7 +207,7 @@ public class MessageGenerator {
         long blockSize = Long.parseLong(Configuration.getConfigurationValue("blockSize"));
 
         Document doc = new Document();
-        doc.append("command", Command.FILE_BYTES_REQUEST.toString());
+        doc.append("command", FILE_BYTES_REQUEST);
         doc.append("fileDescriptor", fileDescriptor);
         doc.append("pathName", pathName);
         doc.append("position", position);
@@ -200,7 +218,7 @@ public class MessageGenerator {
 
     public static String genDirectoryCreateResponse(FileSystemManager fileSystemManager, String pathName) {
         Document doc = new Document();
-        doc.append("command", Command.DIRECTORY_CREATE_RESPONSE.toString());
+        doc.append("command", DIRECTORY_CREATE_RESPONSE);
         doc.append("pathName", pathName);
 
         if (fileSystemManager.dirNameExists(pathName)) {
@@ -240,7 +258,7 @@ public class MessageGenerator {
 
 
         Document doc = new Document();
-        doc.append("command", Command.FILE_BYTES_RESPONSE.toString());
+        doc.append("command", FILE_BYTES_RESPONSE);
         doc.append("fileDescriptor", fileDescriptor);
         doc.append("pathName", pathName);
         doc.append("position", position);

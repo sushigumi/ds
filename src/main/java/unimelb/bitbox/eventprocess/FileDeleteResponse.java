@@ -2,7 +2,7 @@ package unimelb.bitbox.eventprocess;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 
-import unimelb.bitbox.messages.Command;
+import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
@@ -32,7 +32,7 @@ public class FileDeleteResponse extends BaseRunnable
 		Document fileDescriptor = (Document)received.get("fileDescriptor");
 
 		Document doc = new Document();
-		doc.append("command", Command.FILE_DELETE_RESPONSE.toString());
+		doc.append("command", Messages.FILE_DELETE_RESPONSE);
 		doc.append("fileDescriptor", fileDescriptor);
 		doc.append("pathName", pathName);
 

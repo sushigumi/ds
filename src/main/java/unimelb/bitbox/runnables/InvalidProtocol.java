@@ -1,7 +1,7 @@
 package unimelb.bitbox.runnables;
 
 import unimelb.bitbox.messages.InvalidProtocolType;
-import unimelb.bitbox.messages.MessageGenerator;
+import unimelb.bitbox.messages.Messages;
 
 import java.io.BufferedWriter;
 
@@ -37,19 +37,19 @@ public class InvalidProtocol extends BaseRunnable {
     public void run() {
         switch (type) {
             case CUSTOM:
-                sendMessage(MessageGenerator.genInvalidProtocol(message));
+                sendMessage(Messages.genInvalidProtocol(message));
                 break;
 
             case INVALID_COMMAND:
-                sendMessage(MessageGenerator.genInvalidProtocol("invalid command"));
+                sendMessage(Messages.genInvalidProtocol("invalid command"));
                 break;
 
             case MISSING_FIELD:
-                sendMessage(MessageGenerator.genInvalidProtocol("error in " + field + " field"));
+                sendMessage(Messages.genInvalidProtocol("error in " + field + " field"));
                 break;
 
             default:
-                sendMessage(MessageGenerator.genInvalidProtocol("invalid protocol"));
+                sendMessage(Messages.genInvalidProtocol("invalid protocol"));
                 break;
         }
     }
