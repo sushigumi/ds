@@ -39,6 +39,7 @@ public class OutgoingConnection extends Connection {
                         socket = new Socket(remoteHostPort.host, remoteHostPort.port);
                     } catch (IOException e1) {
                         System.out.println("Unable to connect to " + remoteHostPort.toString() + ". Peer could be offline");
+                        closeConnection();
                         return;
                     }
                     // Setup a new writer and reader for the new socket
@@ -66,7 +67,6 @@ public class OutgoingConnection extends Connection {
                     else if (command.equals(Messages.CONNECTION_REFUSED)) {
                         // If Connection is refused, start a new connection to the other peers
                         // Close the current socket first
-                        // TODO maybe a try-catch here
                         try {
                             // Close the input, output and socket
                             input.close();
@@ -89,7 +89,6 @@ public class OutgoingConnection extends Connection {
                         System.out.println(toConnect);
                     }
                     // Received an invalid message so send INVALID_PROTOCOL message
-                    // TODO add a loop to handle invalid protocol
                     else {
                         sendMessage(Messages.genInvalidProtocol("Invalid command. Expecting HANDSHAKE_RESPONSE " +
                                 "or CONNECTION_REFUSED"));
@@ -98,6 +97,9 @@ public class OutgoingConnection extends Connection {
             } catch(IOException e) {
                 System.out.println("ERROR here IO Exception");
                 e.printStackTrace();
+                listener.shutdownNow();
+                sender.shutdownNow();
+                background.shutdownNow();
             }
         }
     }

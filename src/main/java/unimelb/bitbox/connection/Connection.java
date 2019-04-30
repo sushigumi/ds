@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
  */
 public abstract class Connection {
     Socket socket; // Other peer's socket
+    boolean isIncoming;
 
     HostPort localHostPort;
     HostPort remoteHostPort;
@@ -53,6 +54,7 @@ public abstract class Connection {
         this.socket = socket;
         this.localHostPort = localHostPort;
         this.fileSystemManager = fileSystemManager;
+        this.isIncoming = true;
 
         createWriterAndReader();
 
@@ -72,6 +74,7 @@ public abstract class Connection {
     Connection(FileSystemManager fileSystemManager, HostPort localHostPort) {
         this.localHostPort = localHostPort;
         this.fileSystemManager = fileSystemManager;
+        this.isIncoming = false;
 
         this.listener = Executors.newSingleThreadExecutor();
 
@@ -97,6 +100,8 @@ public abstract class Connection {
             System.out.println("HERE IS THE PROBLEM");
             e.printStackTrace();
             try {
+                output.close();
+                input.close();
                 socket.close();
             } catch (IOException e2) {
                 e2.printStackTrace();
@@ -156,10 +161,12 @@ public abstract class Connection {
     void closeConnection() {
         try {
             socket.close();
+            input.close();
+            output.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        observer.closeConnection(remoteHostPort);
+        observer.closeConnection(remoteHostPort, isIncoming);
     }
 
     class Listener implements Runnable {
@@ -167,8 +174,8 @@ public abstract class Connection {
         @Override
         public void run() {
             try {
-                while (true) {
-                    String in = input.readLine();
+                String in;
+                while ((in = input.readLine()) != null) {
 
                     Document doc = Document.parse(in);
 
@@ -309,12 +316,22 @@ public abstract class Connection {
                         closeConnection();
                     }
                 }
+
+                closeConnection();
+                listener.shutdownNow();
+                sender.shutdownNow();
+                background.shutdownNow();
             }
             // When the peer has closed the connection
             catch (IOException e) {
                 e.printStackTrace();
                 System.out.println("Peer has closed the connection");
-                observer.closeConnection(remoteHostPort);
+                closeConnection();
+
+                // Shutdown the threads
+                listener.shutdownNow();
+                sender.shutdownNow();
+                background.shutdownNow();
             }
         }
     }
