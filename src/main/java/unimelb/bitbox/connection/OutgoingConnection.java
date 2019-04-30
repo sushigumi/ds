@@ -67,7 +67,11 @@ public class OutgoingConnection extends Connection {
                         // If Connection is refused, start a new connection to the other peers
                         // Close the current socket first
                         // TODO maybe a try-catch here
-                        observer.closeConnection(remoteHostPort);
+                        try {
+                            socket.close();
+                        } catch (IOException e) {
+                            System.out.println("Error closing socket");
+                        }
                         System.out.println("Connection closed");
 
                         // Add more peer host ports to to be connected list
