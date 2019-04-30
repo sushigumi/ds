@@ -180,146 +180,131 @@ public abstract class Connection {
 
                     String command = doc.getString("command");
 
-                    switch (command) {
-                        // Invalid protocol received so close the connection then try to reconnect at least three times
-                        case Messages.INVALID_PROTOCOL:
+                    // Invalid protocol received so close the connection then try to reconnect at least three times
+                    if (command.equals(Messages.INVALID_PROTOCOL)) {
+                        closeConnection();
+                        observer.interruptConnection(remoteHostPort, localHostPort, fileSystemManager);
+                    }
+                    else if (command.equals(Messages.FILE_CREATE_REQUEST)) {
+                        String createRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
+                        if (createRequest != null) {
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, createRequest));
                             closeConnection();
-                            observer.interruptConnection(remoteHostPort, localHostPort, fileSystemManager);
-                            break;
-                        case Messages.FILE_CREATE_REQUEST:
-                            String createRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
-                            if (createRequest != null) {
-                                background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, createRequest));
-                                closeConnection();
-                                return;
-                            }
-                            else {
-                                background.submit(new FileCreateResponse(output, doc, fileSystemManager));
-                            }
-                            break;
-
-                        case Messages.FILE_CREATE_RESPONSE:
-                            String createResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
-                            if (createResponse != null) {
-                                background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, createResponse));
-                                closeConnection();
-                                return;
-                            }
-                            break;
-
-
-                        case Messages.FILE_DELETE_REQUEST:
-                            String deleteRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
-                            if (deleteRequest != null) {
-                                background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, deleteRequest));
-                                closeConnection();
-                                return;
-                            }
-                            else {
-                                background.submit(new FileDeleteResponse(output, doc, fileSystemManager));
-                            }
-                            break;
-
-                        case Messages.FILE_DELETE_RESPONSE:
-                            String deleteResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
-                            if (deleteResponse != null) {
-                                background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, deleteResponse));
-                                closeConnection();
-                                return;
-                            }
-                            break;
-
-                        case Messages.FILE_MODIFY_REQUEST:
-                            String modifyRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
-                            if (modifyRequest != null) {
-                                background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, modifyRequest));
-                                closeConnection();
-                                return;
-                            }
-                            else {
-                                background.submit(new FileModifyResponse(output, doc, fileSystemManager));
-                                }
-                            break;
-
-                        case Messages.FILE_MODIFY_RESPONSE:
-                            String modifyResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
-                            if (modifyResponse != null) {
-                                background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, modifyResponse));
-                                closeConnection();
-                                return;
-                            }
-                            break;
-
-                        case Messages.FILE_BYTES_REQUEST:
-                            String bytesRequest = MessageValidator.getInstance().validateFileBytesRequest(doc);
-                            if (bytesRequest != null) {
-                                background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, bytesRequest));
-                                closeConnection();
-                                return;
-                            }
-                            else {
-                                background.submit(new FileBytesResponse(output, fileSystemManager, doc));
-                                }
-                            break;
-
-                        case Messages.FILE_BYTES_RESPONSE:
-                            String bytesResponse = MessageValidator.getInstance().validateFileBytesResponse(doc);
-                            if (bytesResponse != null) {
-                                background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, bytesResponse));
-                                closeConnection();
-                                return;
-                            }
-                            else {
-                                background.submit(new ConstructFile(output, fileSystemManager, doc));
-                                }
-                            break;
-
-                        case Messages.DIRECTORY_CREATE_REQUEST:
-                            String dirCreateRequest = MessageValidator.getInstance().validateDirectoryChangeRequest(doc);
-                            if (dirCreateRequest != null) {
-                                background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirCreateRequest));
-                                closeConnection();
-                                return;
-                            }
-                            else {
-                                background.submit(new DirectoryCreateResponse(output, fileSystemManager, doc));
-                            }
-                            break;
-
-                        case Messages.DIRECTORY_CREATE_RESPONSE:
-                            String dirCteateResponse = MessageValidator.getInstance().validateDirectoryChangeResponse(doc);
-                            if (dirCteateResponse != null) {
-                                background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirCteateResponse));
-                                closeConnection();
-                                return;
-                            }
-                            break;
-
-                        case Messages.DIRECTORY_DELETE_REQUEST:
-                            String dirDeleteRequest = MessageValidator.getInstance().validateDirectoryChangeRequest(doc);
-                            if (dirDeleteRequest != null) {
-                                background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirDeleteRequest));
-                                closeConnection();
-                                return;
-                            }
-                            else {
-                                background.submit(new DirectoryDeleteResponse(output, fileSystemManager, doc));
-                            }
-                            break;
-
-                        case Messages.DIRECTORY_DELETE_RESPONSE:
-                            String dirDeleteResponse = MessageValidator.getInstance().validateDirectoryChangeResponse(doc);
-                            if (dirDeleteResponse != null) {
-                                background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirDeleteResponse));
-                                closeConnection();
-                                return;
-                            }
-                            break;
-
-                        default:
-                            background.submit(new InvalidProtocol(output, InvalidProtocolType.INVALID_COMMAND));
+                            return;
+                        }
+                        else {
+                            background.submit(new FileCreateResponse(output, doc, fileSystemManager));
+                        }
+                    }
+                    else if (command.equals(Messages.FILE_CREATE_RESPONSE)) {
+                        String createResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
+                        if (createResponse != null) {
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, createResponse));
                             closeConnection();
-                            break;
+                            return;
+                        }
+                    }
+                    else if (command.equals(Messages.FILE_DELETE_REQUEST)) {
+                        String deleteRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
+                        if (deleteRequest != null) {
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, deleteRequest));
+                            closeConnection();
+                            return;
+                        }
+                        else {
+                            background.submit(new FileDeleteResponse(output, doc, fileSystemManager));
+                        }
+                    }
+                    else if (command.equals(Messages.FILE_DELETE_RESPONSE)) {
+                        String deleteResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
+                        if (deleteResponse != null) {
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, deleteResponse));
+                            closeConnection();
+                            return;
+                        }
+                    }
+                    else if (command.equals(Messages.FILE_MODIFY_REQUEST)) {
+                        String modifyRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
+                        if (modifyRequest != null) {
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, modifyRequest));
+                            closeConnection();
+                            return;
+                        }
+                        else {
+                            background.submit(new FileModifyResponse(output, doc, fileSystemManager));
+                        }
+                    }
+                    else if (command.equals(Messages.FILE_MODIFY_RESPONSE)) {
+                        String modifyResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
+                        if (modifyResponse != null) {
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, modifyResponse));
+                            closeConnection();
+                            return;
+                        }
+                    }
+                    else if (command.equals(Messages.FILE_BYTES_REQUEST)) {
+                        String bytesRequest = MessageValidator.getInstance().validateFileBytesRequest(doc);
+                        if (bytesRequest != null) {
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, bytesRequest));
+                            closeConnection();
+                            return;
+                        }
+                        else {
+                            background.submit(new FileBytesResponse(output, fileSystemManager, doc));
+                        }
+                    }
+                    else if (command.equals(Messages.FILE_BYTES_RESPONSE)) {
+                        String bytesResponse = MessageValidator.getInstance().validateFileBytesResponse(doc);
+                        if (bytesResponse != null) {
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, bytesResponse));
+                            closeConnection();
+                            return;
+                        }
+                        else {
+                            background.submit(new ConstructFile(output, fileSystemManager, doc));
+                        }
+                    }
+                    else if (command.equals(Messages.DIRECTORY_CREATE_REQUEST)) {
+                        String dirCreateRequest = MessageValidator.getInstance().validateDirectoryChangeRequest(doc);
+                        if (dirCreateRequest != null) {
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirCreateRequest));
+                            closeConnection();
+                            return;
+                        }
+                        else {
+                            background.submit(new DirectoryCreateResponse(output, fileSystemManager, doc));
+                        }
+                    }
+                    else if (command.equals(Messages.DIRECTORY_CREATE_RESPONSE)) {
+                        String dirCteateResponse = MessageValidator.getInstance().validateDirectoryChangeResponse(doc);
+                        if (dirCteateResponse != null) {
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirCteateResponse));
+                            closeConnection();
+                            return;
+                        }
+                    }
+                    else if (command.equals(Messages.DIRECTORY_DELETE_REQUEST)) {
+                        String dirDeleteRequest = MessageValidator.getInstance().validateDirectoryChangeRequest(doc);
+                        if (dirDeleteRequest != null) {
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirDeleteRequest));
+                            closeConnection();
+                            return;
+                        }
+                        else {
+                            background.submit(new DirectoryDeleteResponse(output, fileSystemManager, doc));
+                        }
+                    }
+                    else if (command.equals(Messages.DIRECTORY_DELETE_RESPONSE)) {
+                        String dirDeleteResponse = MessageValidator.getInstance().validateDirectoryChangeResponse(doc);
+                        if (dirDeleteResponse != null) {
+                            background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirDeleteResponse));
+                            closeConnection();
+                            return;
+                        }
+                    }
+                    else {
+                        background.submit(new InvalidProtocol(output, InvalidProtocolType.INVALID_COMMAND));
+                        closeConnection();
                     }
                 }
             }
