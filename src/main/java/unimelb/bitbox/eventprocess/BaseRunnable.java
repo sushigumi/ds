@@ -21,8 +21,9 @@ public abstract class BaseRunnable implements Runnable {
             runnableOutput.newLine();
             runnableOutput.flush();
         } catch (IOException e) {
+            System.out.println("Base Runnable: Peer has closed the connection");
             System.out.println(e.getMessage());
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 }

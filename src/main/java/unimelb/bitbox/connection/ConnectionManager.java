@@ -111,7 +111,9 @@ public class ConnectionManager implements ConnectionObserver {
 
     public void processFileSystemEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
         // Create runnable here
+        System.out.println(peers.size());
         for (Connection connection: peers) {
+            System.out.println(connection.remoteHostPort);
             connection.submitEvent(fileSystemEvent);
         }
     }
