@@ -1,11 +1,9 @@
 package unimelb.bitbox.runnables;
 
-import unimelb.bitbox.messages.MessageGenerator;
+import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
-import unimelb.bitbox.util.FileSystemManager;
 
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.util.ArrayList;
 
 /**
@@ -26,7 +24,7 @@ public class FileBytesRequest extends BaseRunnable {
 
     @Override
     public void run() {
-        ArrayList<String> messages = MessageGenerator.genFileBytesRequests(fileDescriptor, pathName);
+        ArrayList<String> messages = Messages.genFileBytesRequests(fileDescriptor, pathName);
 
         for (String message : messages) {
             sendMessage(message);

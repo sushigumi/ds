@@ -4,7 +4,7 @@ import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 
 
-import unimelb.bitbox.messages.Command;
+import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
@@ -19,7 +19,7 @@ public class FileModifyRequest extends BaseRunnable {
 	
 	public void run () {
 		Document doc = new Document();
-		doc.append("command", Command.FILE_MODIFY_REQUEST.toString());
+		doc.append("command", Messages.FILE_MODIFY_REQUEST);
 		doc.append("fileDescriptor",fileSystemEvent.fileDescriptor.toDoc());
 		doc.append("pathName", fileSystemEvent.pathName);
 		

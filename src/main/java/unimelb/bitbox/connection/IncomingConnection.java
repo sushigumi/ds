@@ -1,14 +1,12 @@
 package unimelb.bitbox.connection;
 
-import unimelb.bitbox.messages.Command;
-import unimelb.bitbox.messages.MessageGenerator;
+import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
@@ -34,15 +32,15 @@ public class IncomingConnection extends Connection {
             try {
                 Document message = Document.parse(input.readLine());
                 //System.out.println(message.toJson());
-                Command command = Command.fromString(message.getString("command"));
+                String command = message.getString("command");
 
                 // If it is a HANDSHAKE_REQUEST then send a HANDSHAKE_RESPONSE, else send an INVALID_PROTOCOL
-                if (command == Command.HANDSHAKE_REQUEST) {
+                if (command == Messages.HANDSHAKE_REQUEST) {
                     HostPort remoteHostPort = new HostPort((Document)message.get("hostPort"));
                     // If the maximum number of incoming connections has been reached, reject the connection
                     // else accept the connection
                     if (ConnectionManager.getInstance().isAnyFreeConnection()) {
-                        sendMessage(MessageGenerator.genHandshakeResponse(localHostPort));
+                        sendMessage(Messages.genHandshakeResponse(localHostPort));
                         listener.submit(new Listener());
 
                         // Increment the number of incoming connections in the Connection Manager
@@ -53,7 +51,7 @@ public class IncomingConnection extends Connection {
                         initSyncPeers();
                     } else {
                         // Send a CONNECTION_REFUSED message here
-                        sendMessage(MessageGenerator.genConnectionRefused(ConnectionManager.getInstance().getPeers()));
+                        sendMessage(Messages.genConnectionRefused(ConnectionManager.getInstance().getPeers()));
                         System.out.println("connection refused");
 
                         // Sleep this thread to wait for the message to be sent fully then close the socket
@@ -68,7 +66,7 @@ public class IncomingConnection extends Connection {
                     }
 
                 } else {
-                    sendMessage(MessageGenerator.genInvalidProtocol("Invalid command. Expecting HANDSHAKE_REQUEST"));
+                    sendMessage(Messages.genInvalidProtocol("Invalid command. Expecting HANDSHAKE_REQUEST"));
                 }
             } catch (IOException e) {
                 System.out.println(e.getMessage());
