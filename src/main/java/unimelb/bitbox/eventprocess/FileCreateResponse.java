@@ -77,7 +77,7 @@ public class FileCreateResponse extends BaseRunnable
 			}
 			catch (IOException e) {
 				// TODO Auto-generated catch block
-				doc.append("message", "error in exception");
+				doc.append("message", "file is currently being modified");
 				doc.append("status", false);
 				sendMessage(doc.toJson());
 				e.printStackTrace();
