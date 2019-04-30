@@ -68,7 +68,10 @@ public class OutgoingConnection extends Connection {
                         // Close the current socket first
                         // TODO maybe a try-catch here
                         try {
+                            input.close();
+                            output.close();
                             socket.close();
+                            socket = null;
                         } catch (IOException e) {
                             System.out.println("Error closing socket");
                         }
