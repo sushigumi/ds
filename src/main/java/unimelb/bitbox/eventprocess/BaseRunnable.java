@@ -22,6 +22,7 @@ public abstract class BaseRunnable implements Runnable {
             output.newLine();
             output.flush();
         } catch (IOException e) {
+            System.out.println(e.getMessage());
             e.printStackTrace();
         }
     }

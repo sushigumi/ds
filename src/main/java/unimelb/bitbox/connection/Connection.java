@@ -94,6 +94,8 @@ public abstract class Connection {
             input = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
             output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
         } catch (IOException e) {
+            System.out.println("HERE IS THE PROBLEM");
+            e.printStackTrace();
             try {
                 socket.close();
             } catch (IOException e2) {
