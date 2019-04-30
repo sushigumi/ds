@@ -1,15 +1,8 @@
 package unimelb.bitbox.connection;
 
+import unimelb.bitbox.eventprocess.*;
 import unimelb.bitbox.messages.MessageValidator;
 import unimelb.bitbox.messages.Messages;
-import unimelb.bitbox.runnables.DirectoryCreateResponse;
-import unimelb.bitbox.runnables.DirectoryDeleteRequest;
-import unimelb.bitbox.runnables.DirectoryDeleteResponse;
-import unimelb.bitbox.eventprocess.FileCreateRequest;
-import unimelb.bitbox.eventprocess.FileCreateResponse;
-import unimelb.bitbox.eventprocess.FileDeleteRequest;
-import unimelb.bitbox.eventprocess.FileDeleteResponse;
-import unimelb.bitbox.runnables.*;
 import unimelb.bitbox.messages.InvalidProtocolType;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
@@ -188,6 +181,11 @@ public abstract class Connection {
                     String command = doc.getString("command");
 
                     switch (command) {
+                        // Invalid protocol received so close the connection then try to reconnect at least three times
+                        case Messages.INVALID_PROTOCOL:
+                            closeConnection();
+                            observer.interruptConnection(remoteHostPort, localHostPort, fileSystemManager);
+                            break;
                         case Messages.FILE_CREATE_REQUEST:
                             String createRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
                             if (createRequest != null) {
