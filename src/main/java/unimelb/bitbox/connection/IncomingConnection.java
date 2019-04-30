@@ -62,7 +62,7 @@ public class IncomingConnection extends Connection {
 //                        }
 
                         System.out.println("Connection closed");
-                        socket.close();
+                        observer.closeConnection(remoteHostPort);
                     }
 
                 } else {
