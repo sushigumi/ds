@@ -116,7 +116,11 @@ public class ConnectionManager implements ConnectionObserver {
     }
 
     @Override
-    public void closeConnection(HostPort remoteHostPort) {
+    public void closeConnection(HostPort remoteHostPort, boolean isIncoming) {
+        // Reduce the number of connections
+        if (isIncoming) {
+            nConnections--;
+        }
 
         // Get the index of the connection
         peerHostPorts.remove(remoteHostPort);

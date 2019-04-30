@@ -62,8 +62,6 @@ public class IncomingConnection extends Connection {
 //                        }
 
                         System.out.println("Connection closed");
-                        output.close();
-                        input.close();
                         closeConnection();
                     }
 
@@ -73,6 +71,12 @@ public class IncomingConnection extends Connection {
             } catch (IOException e) {
                 System.out.println(e.getMessage());
                 e.printStackTrace();
+                closeConnection();
+
+                // Shutdown threads
+                listener.shutdownNow();
+                background.shutdownNow();
+                sender.shutdownNow();
             }
         }
     }
