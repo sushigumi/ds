@@ -139,6 +139,8 @@ public class ConnectionManager implements ConnectionObserver {
             Connection connection = new OutgoingConnection(fileSystemManager, localHostPort, remoteHostPort);
             connection.addConnectionObserver(this);
             peers.add(connection);
+        } else{
+            retries.remove(remoteHostPort);
         }
     }
 }
