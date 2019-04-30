@@ -30,6 +30,7 @@ public class ConnectionManager implements ConnectionObserver {
         MAXIMUM_CONNECTIONS = Integer.parseInt(Configuration.getConfigurationValue("maximumIncommingConnections"));
         peerHostPorts = new ArrayList<>();
         peers = new ArrayList<>();
+        retries = new HashMap<>();
         nConnections = 0;
     }
 
@@ -44,6 +45,8 @@ public class ConnectionManager implements ConnectionObserver {
 
             addPeer(fileSystemManager, localHostPort, remoteHostPort);
 
+            retries.put(remoteHostPort, 0);
+
         }
     }
 
@@ -57,6 +60,8 @@ public class ConnectionManager implements ConnectionObserver {
         Connection connection = new OutgoingConnection(fileSystemManager, localHostPort, remoteHostPort);
         connection.addConnectionObserver(this);
         peers.add(connection);
+
+        retries.put(remoteHostPort, 0);
 
     }
 
