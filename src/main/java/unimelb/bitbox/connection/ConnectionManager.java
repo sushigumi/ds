@@ -7,6 +7,7 @@ import unimelb.bitbox.util.HostPort;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * Handles connections and is a singleton
@@ -126,14 +127,17 @@ public class ConnectionManager implements ConnectionObserver {
         peerHostPorts.remove(remoteHostPort);
 
         // Remove connection
-        int i = 0;
-        for (Connection peer: peers) {
-            if (peer.remoteHostPort.equals(remoteHostPort)) {
-                break;
+        Iterator<Connection> i = peers.iterator();
+        while (i.hasNext()) {
+            Connection s = i.next(); // must be called before you can call i.remove()
+            // Do something
+            if (s.remoteHostPort == null) {
+                i.remove();
             }
-            i++;
+            else if (s.remoteHostPort.equals(remoteHostPort)) {
+                i.remove();
+            }
         }
-        peers.remove(i);
     }
 
     @Override

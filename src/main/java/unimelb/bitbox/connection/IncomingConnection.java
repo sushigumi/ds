@@ -37,15 +37,15 @@ public class IncomingConnection extends Connection {
                 // If it is a HANDSHAKE_REQUEST then send a HANDSHAKE_RESPONSE, else send an INVALID_PROTOCOL
                 if (command.equals(Messages.HANDSHAKE_REQUEST)) {
                     HostPort remoteHostPort = new HostPort((Document)message.get("hostPort"));
+                    updateRemoteHostPort(remoteHostPort);
                     // If the maximum number of incoming connections has been reached, reject the connection
                     // else accept the connection
                     if (ConnectionManager.getInstance().isAnyFreeConnection()) {
                         sendMessage(Messages.genHandshakeResponse(localHostPort));
-                        listener.submit(new Listener());
-
                         // Increment the number of incoming connections in the Connection Manager
-                        updateRemoteHostPort(remoteHostPort);
+                        System.out.println(remoteHostPort);
                         ConnectionManager.getInstance().connectedPeer(remoteHostPort, true);
+                        listener.submit(new Listener());
 
                         // TODO Call generate sync events here and sent appropriate messages
                         initSyncPeers();

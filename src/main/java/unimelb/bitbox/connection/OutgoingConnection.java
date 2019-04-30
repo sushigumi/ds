@@ -37,6 +37,7 @@ public class OutgoingConnection extends Connection {
                     HostPort remoteHostPort = toConnect.remove(0);
                     try {
                         socket = new Socket(remoteHostPort.host, remoteHostPort.port);
+                        updateRemoteHostPort(remoteHostPort);
                     } catch (IOException e1) {
                         System.out.println("Unable to connect to " + remoteHostPort.toString() + ". Peer could be offline");
                         closeConnection();
@@ -55,7 +56,7 @@ public class OutgoingConnection extends Connection {
 
                     // Connected so just exit this and proceed to listen for file events
                     if (command.equals(Messages.HANDSHAKE_RESPONSE)) {
-                        updateRemoteHostPort(remoteHostPort);
+                        System.out.println(remoteHostPort);
                         ConnectionManager.getInstance().connectedPeer(remoteHostPort, false);
                         listener.submit(new Listener());
                         toConnect.clear(); // Clear to connect since already connected

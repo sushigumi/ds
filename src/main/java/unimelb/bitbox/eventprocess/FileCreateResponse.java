@@ -29,9 +29,6 @@ public class FileCreateResponse extends BaseRunnable
 	public void run() 
 	{
 		// Check for errors
-
-
-
 		String pathName = received.getString("pathName");
 		Document fileDescriptor = (Document)received.get("fileDescriptor");
 
@@ -55,20 +52,30 @@ public class FileCreateResponse extends BaseRunnable
 		else
 		{
 			try {
-				if(fileSystemManager.createFileLoader(pathName, 
+				fileSystemManager.cancelFileLoader(pathName);
+
+			} catch (IOException e) {
+				System.out.println("Error with accessing file system");
+				doc.append("message", "error accessing file system. could not create file");
+				doc.append("status", false);
+				e.printStackTrace();
+				return;
+			}
+			try {
+				if(fileSystemManager.createFileLoader(pathName,
 						fileDescriptor.getString("md5"),fileDescriptor.getLong("fileSize"),
 						fileDescriptor.getLong("lastModified"))){
-				    doc.append("message", "file loader ready");
-				    doc.append("status", true);
-				    sendMessage(doc.toJson());
-				    if(!fileSystemManager.checkShortcut(pathName))
-				    {
-				    	   ArrayList<String> messages = Messages.genFileBytesRequests(fileDescriptor, pathName);
+					doc.append("message", "file loader ready");
+					doc.append("status", true);
+					sendMessage(doc.toJson());
+					if(!fileSystemManager.checkShortcut(pathName))
+					{
+						ArrayList<String> messages = Messages.genFileBytesRequests(fileDescriptor, pathName);
 
-				           for (String message : messages) {
-				               sendMessage(message);
-				           }
-				    }
+						for (String message : messages) {
+							sendMessage(message);
+						}
+					}
 				} else {
 					doc.append("message", "file loader being modified");
 					doc.append("status", false);
@@ -85,6 +92,7 @@ public class FileCreateResponse extends BaseRunnable
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+
 		}
 		
 		
