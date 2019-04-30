@@ -1,4 +1,4 @@
-package unimelb.bitbox.runnables;
+package unimelb.bitbox.eventprocess;
 
 import unimelb.bitbox.messages.InvalidProtocolType;
 import unimelb.bitbox.messages.Messages;

@@ -140,6 +140,28 @@ public class Messages {
         return doc.toJson();
     }
 
+    public static String genDirectoryCreateResponse(FileSystemManager fileSystemManager, String pathName) {
+        Document doc = new Document();
+        doc.append("command", DIRECTORY_CREATE_RESPONSE);
+        doc.append("pathName", pathName);
+
+        if (fileSystemManager.dirNameExists(pathName)) {
+            doc.append("message", "pathname already exists");
+            doc.append("status", false);
+        } else if (!fileSystemManager.isSafePathName(pathName)) {
+            doc.append("message", "unsafe pathname given");
+            doc.append("status", false);
+        } else if (fileSystemManager.makeDirectory(pathName)) {
+            doc.append("message", "directory created");
+            doc.append("status", true);
+        } else {
+            doc.append("message", "there was a problem creating the directory");
+            doc.append("status", false);
+        }
+
+        return doc.toJson();
+    }
+
     /**
      * Generates a list of strings that represent file bytes requests
      * A list of strings is used since a large file needs to be broken up into many other smaller chunks
@@ -216,27 +238,7 @@ public class Messages {
         return doc.toJson();
     }
 
-    public static String genDirectoryCreateResponse(FileSystemManager fileSystemManager, String pathName) {
-        Document doc = new Document();
-        doc.append("command", DIRECTORY_CREATE_RESPONSE);
-        doc.append("pathName", pathName);
 
-        if (fileSystemManager.dirNameExists(pathName)) {
-            doc.append("message", "pathname already exists");
-            doc.append("status", false);
-        } else if (!fileSystemManager.isSafePathName(pathName)) {
-            doc.append("message", "unsafe pathname given");
-            doc.append("status", false);
-        } else if (fileSystemManager.makeDirectory(pathName)) {
-            doc.append("message", "directory created");
-            doc.append("status", true);
-        } else {
-            doc.append("message", "there was a problem creating the directory");
-            doc.append("status", false);
-        }
-
-        return doc.toJson();
-    }
 
     /**
      * Generates a string which represents a file bytes response message which sends the correct bytes of

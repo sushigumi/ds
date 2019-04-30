@@ -1,7 +1,7 @@
 package unimelb.bitbox.connection;
 
 import unimelb.bitbox.messages.Messages;
-import unimelb.bitbox.runnables.BaseRunnable;
+import unimelb.bitbox.eventprocess.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;

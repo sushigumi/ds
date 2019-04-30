@@ -1,9 +1,7 @@
 package unimelb.bitbox.eventprocess;
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 
 import unimelb.bitbox.messages.Messages;
-import unimelb.bitbox.runnables.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 

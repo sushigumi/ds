@@ -77,6 +77,7 @@ public class ServerMain implements FileSystemObserver {
 					ConnectionManager.getInstance().addPeer(fileSystemManager, socket, localHostPort);
 				}
 			} catch (IOException e) {
+				log.info("Error has occured. Please restart the server");
 				e.printStackTrace();
 			}
 		} catch (IOException e) {

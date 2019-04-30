@@ -6,6 +6,7 @@ import unimelb.bitbox.util.HostPort;
 
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Handles connections and is a singleton
@@ -16,6 +17,8 @@ public class ConnectionManager implements ConnectionObserver {
 
     private ArrayList<HostPort> peerHostPorts;
     private ArrayList<Connection> peers;
+
+    private HashMap<HostPort, Integer> retries;
 
     private static ConnectionManager instance = new ConnectionManager();
 
@@ -122,5 +125,15 @@ public class ConnectionManager implements ConnectionObserver {
             i++;
         }
         peers.remove(i);
+    }
+
+    @Override
+    public void interruptConnection(HostPort remoteHostPort, HostPort localHostPort, FileSystemManager fileSystemManager) {
+        // Retry the connection if retries is less than 3
+        if (retries.get(remoteHostPort) < 3) {
+            Connection connection = new OutgoingConnection(fileSystemManager, localHostPort, remoteHostPort);
+            connection.addConnectionObserver(this);
+            peers.add(connection);
+        }
     }
 }
