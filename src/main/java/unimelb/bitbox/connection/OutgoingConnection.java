@@ -53,7 +53,7 @@ public class OutgoingConnection extends Connection {
                     String command = response.getString("command");
 
                     // Connected so just exit this and proceed to listen for file events
-                    if (command == Messages.HANDSHAKE_RESPONSE) {
+                    if (command.equals(Messages.HANDSHAKE_RESPONSE)) {
                         updateRemoteHostPort(remoteHostPort);
                         ConnectionManager.getInstance().connectedPeer(remoteHostPort, false);
                         listener.submit(new Listener());
@@ -63,7 +63,7 @@ public class OutgoingConnection extends Connection {
                     }
                     // Connection refused
                     // Add the peers to connect to end of the queue to simulate breadth-first search of peers
-                    else if (command == Messages.CONNECTION_REFUSED) {
+                    else if (command.equals(Messages.CONNECTION_REFUSED)) {
                         // If Connection is refused, start a new connection to the other peers
                         // Close the current socket first
                         // TODO maybe a try-catch here

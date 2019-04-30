@@ -35,7 +35,7 @@ public class IncomingConnection extends Connection {
                 String command = message.getString("command");
 
                 // If it is a HANDSHAKE_REQUEST then send a HANDSHAKE_RESPONSE, else send an INVALID_PROTOCOL
-                if (command == Messages.HANDSHAKE_REQUEST) {
+                if (command.equals(Messages.HANDSHAKE_REQUEST)) {
                     HostPort remoteHostPort = new HostPort((Document)message.get("hostPort"));
                     // If the maximum number of incoming connections has been reached, reject the connection
                     // else accept the connection
