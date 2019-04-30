@@ -97,16 +97,4 @@ public class FileCreateResponse extends BaseRunnable
 		
 		
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
 }
