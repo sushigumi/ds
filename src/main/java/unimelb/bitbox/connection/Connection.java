@@ -163,10 +163,13 @@ public abstract class Connection {
             socket.close();
             input.close();
             output.close();
+            listener.shutdownNow();
+            sender.shutdownNow();
+            background.shutdownNow();
+            observer.closeConnection(remoteHostPort, isIncoming);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        observer.closeConnection(remoteHostPort, isIncoming);
     }
 
     class Listener implements Runnable {
@@ -317,21 +320,14 @@ public abstract class Connection {
                     }
                 }
 
+                System.out.println("Peer has closed the connection");
                 closeConnection();
-                listener.shutdownNow();
-                sender.shutdownNow();
-                background.shutdownNow();
             }
             // When the peer has closed the connection
             catch (IOException e) {
                 e.printStackTrace();
                 System.out.println("Peer has closed the connection");
                 closeConnection();
-
-                // Shutdown the threads
-                listener.shutdownNow();
-                sender.shutdownNow();
-                background.shutdownNow();
             }
         }
     }
