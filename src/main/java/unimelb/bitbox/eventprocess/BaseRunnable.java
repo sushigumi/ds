@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 public abstract class BaseRunnable implements Runnable {
-    private static Logger log = Logger.getLogger(BaseRunnable.class.getName());
+    static Logger log = Logger.getLogger(BaseRunnable.class.getName());
     private BufferedWriter runnableOutput;
 
     public BaseRunnable(BufferedWriter output) {
@@ -19,7 +19,7 @@ public abstract class BaseRunnable implements Runnable {
     public void sendMessage(String message) {
         // Dont print anything if the output is null
         if (runnableOutput == null) {
-            log.info("trying to send to unknown remote");
+            log.warning("trying to send to unknown remote");
             return;
         }
 

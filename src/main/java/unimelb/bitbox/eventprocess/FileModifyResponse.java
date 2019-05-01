@@ -46,16 +46,22 @@ public class FileModifyResponse extends BaseRunnable {
 				if (fileSystemManager.modifyFileLoader(pathName,
 						fileDescriptor.getString("md5"),
 						fileDescriptor.getLong("lastModified"))) {
-					doc.append("message", "file loader ready");
-					doc.append("status", true);
-					sendMessage(doc.toJson());
-					if (!fileSystemManager.checkShortcut(pathName)) {
-						ArrayList<String> messages = Messages.genFileBytesRequests(fileDescriptor, pathName);
 
+					if (!fileSystemManager.checkShortcut(pathName)) {
+						doc.append("message", "file loader ready");
+						doc.append("status", true);
+						sendMessage(doc.toJson());
+
+						ArrayList<String> messages = Messages.genFileBytesRequests(fileDescriptor, pathName);
 						for (String message : messages) {
 							sendMessage(message);
 						}
 
+					}
+					else {
+						doc.append("message", "file created from local copy");
+						doc.append("status", true);
+						sendMessage(doc.toJson());
 					}
 
 

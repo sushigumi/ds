@@ -65,16 +65,24 @@ public class FileCreateResponse extends BaseRunnable
 				if(fileSystemManager.createFileLoader(pathName,
 						fileDescriptor.getString("md5"),fileDescriptor.getLong("fileSize"),
 						fileDescriptor.getLong("lastModified"))){
-					doc.append("message", "file loader ready");
-					doc.append("status", true);
-					sendMessage(doc.toJson());
+
+					// TODO check if right
 					if(!fileSystemManager.checkShortcut(pathName))
 					{
+						doc.append("message", "file loader ready");
+						doc.append("status", true);
+						sendMessage(doc.toJson());
+
 						ArrayList<String> messages = Messages.genFileBytesRequests(fileDescriptor, pathName);
 
 						for (String message : messages) {
 							sendMessage(message);
 						}
+					}
+					else {
+						doc.append("message", "file created from local copy");
+						doc.append("status", true);
+						sendMessage(doc.toJson());
 					}
 				} else {
 					doc.append("message", "file loader being modified");
