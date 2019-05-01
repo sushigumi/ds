@@ -19,15 +19,13 @@ public class ServerMain implements FileSystemObserver {
 	private static Logger log = Logger.getLogger(ServerMain.class.getName());
 	protected FileSystemManager fileSystemManager;
 
-	private HostPort localHostPort;
+	public static final HostPort localHostPort = new HostPort(Configuration.getConfigurationValue("advertisedName"),
+															  Integer.parseInt(Configuration.getConfigurationValue("port")));
 
 	private ScheduledExecutorService timer;
 
 	public ServerMain() throws NumberFormatException, IOException, NoSuchAlgorithmException {
 		fileSystemManager=new FileSystemManager(Configuration.getConfigurationValue("path"),this);
-
-		this.localHostPort = new HostPort(Configuration.getConfigurationValue("advertisedName"),
-										  Integer.parseInt(Configuration.getConfigurationValue("port")));
 
 		start();
 	}
@@ -57,8 +55,7 @@ public class ServerMain implements FileSystemObserver {
 
 		timer = Executors.newSingleThreadScheduledExecutor();
 		long syncInterval = Long.parseLong(Configuration.getConfigurationValue("syncInterval"));
-		System.out.println(syncInterval);
-		timer.scheduleAtFixedRate(periodicSync, 0, syncInterval, TimeUnit.SECONDS);
+		timer.scheduleAtFixedRate(periodicSync, syncInterval, syncInterval, TimeUnit.SECONDS);
 
 		// Create a server socket
 		try {
@@ -66,22 +63,21 @@ public class ServerMain implements FileSystemObserver {
 
 			// Connect to the peers
 			String[] peers = Configuration.getConfigurationValue("peers").split(",");
-
-			ConnectionManager.getInstance().addPeers(fileSystemManager, peers, localHostPort);
+			ConnectionManager.getInstance().initiateConnection(fileSystemManager, peers);
 
 			// Loop to accept incoming connections
 			try {
 				while (true) {
 					Socket socket = serverSocket.accept();
 
-					ConnectionManager.getInstance().addPeer(fileSystemManager, socket, localHostPort);
+					ConnectionManager.getInstance().acceptConnection(fileSystemManager, socket);
 				}
 			} catch (IOException e) {
-				log.info("Error has occured. Please restart the server");
+				log.severe("Error has occurred. Please restart the server");
 				e.printStackTrace();
 			}
 		} catch (IOException e) {
-			log.info("Failed to start server");
+			log.severe("Failed to start server");
 			e.printStackTrace();
 			System.exit(1);
 		}

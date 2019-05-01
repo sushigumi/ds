@@ -1,7 +1,8 @@
 package unimelb.bitbox.connection;
 
-import unimelb.bitbox.messages.Messages;
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.eventprocess.BaseRunnable;
+import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
@@ -11,72 +12,64 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class IncomingConnection extends Connection {
-    public IncomingConnection(FileSystemManager fileSystemManager, Socket socket, HostPort localHostPort) {
-        super(fileSystemManager, socket, localHostPort);
+    IncomingConnection(FileSystemManager fileSystemManager, Socket socket, ConnectionObserver connectionObserver) {
+        super(fileSystemManager, socket, connectionObserver);
 
-        // Submit a Handshake runnable to the listener
-        listener.submit(new Handshake(output));
+        // Create the writer and reader
+        createWriterAndReader();
+
+        // Start the handshake
+        listener.submit(new Handshake());
     }
 
     private class Handshake extends BaseRunnable {
-        Handshake(BufferedWriter output) {
+        Handshake() {
             super(output);
         }
 
         @Override
         public void run() {
-            // Synchronous part of the protocol. Exchanging handshakes
-            // TODO:If an I/O error is caught, then perhaps we could try again for n number of times
-            // TODO retry mechanism?
-            // Wait for a handshake request to come
+            // Listen for a message from the peer
             try {
-                Document message = Document.parse(input.readLine());
-                //System.out.println(message.toJson());
-                String command = message.getString("command");
+                String msg = input.readLine();
+                Document doc = Document.parse(msg);
 
-                // If it is a HANDSHAKE_REQUEST then send a HANDSHAKE_RESPONSE, else send an INVALID_PROTOCOL
+                String command = doc.getString("command");
+
+                // HANDSHAKE_REQUEST
                 if (command.equals(Messages.HANDSHAKE_REQUEST)) {
-                    HostPort remoteHostPort = new HostPort((Document)message.get("hostPort"));
-                    updateRemoteHostPort(remoteHostPort);
-                    // If the maximum number of incoming connections has been reached, reject the connection
-                    // else accept the connection
+                    // If still have space to accept the connection, send a HANDSHAKE_RESPONSE
+                    remoteHostPort = new HostPort((Document)doc.get("hostPort"));
+                    connectionObserver.updateRetries(remoteHostPort); // Update the number of retries
+
+                    // Send HANDSHAKE_RESPONSE
                     if (ConnectionManager.getInstance().isAnyFreeConnection()) {
-                        sendMessage(Messages.genHandshakeResponse(localHostPort));
-                        // Increment the number of incoming connections in the Connection Manager
-                        System.out.println(remoteHostPort);
-                        ConnectionManager.getInstance().connectedPeer(remoteHostPort, true);
+                        sendMessage(Messages.genHandshakeResponse(ServerMain.localHostPort));
                         listener.submit(new Listener());
 
-                        // TODO Call generate sync events here and sent appropriate messages
+                        // Sync peers
                         initSyncPeers();
-                    } else {
-                        // Send a CONNECTION_REFUSED message here
-                        sendMessage(Messages.genConnectionRefused(ConnectionManager.getInstance().getPeers()));
-                        System.out.println("connection refused");
 
-                        // Sleep this thread to wait for the message to be sent fully then close the socket
-//                        try {
-//                            Thread.sleep(1000);
-//                        } catch (InterruptedException e) {
-//                            e.printStackTrace();
-//                        }
-
-                        System.out.println("Connection closed");
-                        closeConnection();
+                        log.info("successfully connected to " + remoteHostPort);
                     }
-
-                } else {
-                    sendMessage(Messages.genInvalidProtocol("Invalid command. Expecting HANDSHAKE_REQUEST"));
+                    // Send CONNECTION_REFUSED
+                    else {
+                        log.info("maximum number of incoming connections reached, closing connection");
+                        sendMessage(Messages.genConnectionRefused(ConnectionManager.getInstance().getPeersHostPort(remoteHostPort)));
+                        close();
+                    }
                 }
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-                e.printStackTrace();
-                closeConnection();
-
-                // Shutdown threads
-                listener.shutdownNow();
-                background.shutdownNow();
-                sender.shutdownNow();
+                // Received invalid message, so send INVALID_PROTOCOL
+                else {
+                    log.info("invalid message received");
+                    sendMessage(Messages.genInvalidProtocol("expecting HANDSHAKE_REQUEST"));
+                    close();
+                }
+            }
+            // Found an error, close the connection and report to user
+            catch (IOException e) {
+                log.severe("error happened when the peer is trying to listen for a HANDSHAKE_REQUEST");
+                close();
             }
         }
     }
