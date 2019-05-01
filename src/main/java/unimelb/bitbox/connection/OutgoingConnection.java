@@ -1,107 +1,126 @@
 package unimelb.bitbox.connection;
 
-import unimelb.bitbox.messages.Messages;
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.eventprocess.BaseRunnable;
+import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class OutgoingConnection extends Connection {
-    private ArrayList<HostPort> toConnect;
+    OutgoingConnection(FileSystemManager fileSystemManager, ConnectionObserver connectionObserver, HostPort remoteHostPort) {
+        super(fileSystemManager, connectionObserver);
 
-    public OutgoingConnection(FileSystemManager fileSystemManager, HostPort localHostPort, HostPort remoteHostPort) {
-        super(fileSystemManager, localHostPort);
-
-        this.toConnect = new ArrayList<>();
-        this.toConnect.add(remoteHostPort);
-
-        // Submit a handshake runnable to the listener
-        this.listener.submit(new Handshake(output));
+        // Start the handshake
+        listener.submit(new Handshake(remoteHostPort));
     }
 
     private class Handshake extends BaseRunnable {
-        Handshake(BufferedWriter output) {
-            super(output);
+        private HostPort firstHostPort;
+        Handshake(HostPort firstHostPort) {
+            super(null);
+
+            this.firstHostPort = firstHostPort;
+
         }
 
         @Override
         public void run() {
-            try {
-                // Loop to search for peers until finally connected to one
-                while (!toConnect.isEmpty()) {
-                    HostPort remoteHostPort = toConnect.remove(0);
-                    try {
-                        socket = new Socket(remoteHostPort.host, remoteHostPort.port);
-                        updateRemoteHostPort(remoteHostPort);
-                    } catch (IOException e1) {
-                        System.out.println("Unable to connect to " + remoteHostPort.toString() + ". Peer could be offline");
-                        closeConnection();
-                        return;
-                    }
-                    // Setup a new writer and reader for the new socket
-                    createWriterAndReader();
-                    updateOutput(output);
+            // Start a queue to add peers to use bfs to connect to peers if received a CONNECTION_REFUSED
+            // message
+            LinkedList<HostPort> queue = new LinkedList<>();
+            queue.add(firstHostPort);
 
-                    sendMessage(Messages.genHandshakeRequest(localHostPort));
+            // While the queue is not empty, get the peers one by one and connect to them until
+            // a successful connection is established
+            while (!queue.isEmpty()) {
+                remoteHostPort = queue.removeFirst();
 
-                    Document response = Document.parse(input.readLine());
-                    System.out.println(response.toJson());
-
-                    String command = response.getString("command");
-
-                    // Connected so just exit this and proceed to listen for file events
-                    if (command.equals(Messages.HANDSHAKE_RESPONSE)) {
-                        System.out.println(remoteHostPort);
-                        ConnectionManager.getInstance().connectedPeer(remoteHostPort, false);
-                        listener.submit(new Listener());
-                        toConnect.clear(); // Clear to connect since already connected
-                        initSyncPeers();
-                        return;
-                    }
-                    // Connection refused
-                    // Add the peers to connect to end of the queue to simulate breadth-first search of peers
-                    else if (command.equals(Messages.CONNECTION_REFUSED)) {
-                        // If Connection is refused, start a new connection to the other peers
-                        // Close the current socket first
-                        try {
-                            // Close the input, output and socket
-                            input.close();
-                            output.close();
-                            socket.close();
-                            socket = null;
-                        } catch (IOException e) {
-                            System.out.println("Error closing socket");
-                        }
-                        System.out.println("Connection closed");
-
-                        // Add more peer host ports to to be connected list
-                        @SuppressWarnings("unchecked")
-                        ArrayList<Document> peersDoc = (ArrayList<Document>) response.get("peers");
-                        for (Document peerDoc : peersDoc) {
-                            System.out.println(peerDoc.toJson());
-                            toConnect.add(new HostPort(peerDoc));
-                        }
-
-                        System.out.println(toConnect);
-                    }
-                    // Received an invalid message so send INVALID_PROTOCOL message
-                    else {
-                        sendMessage(Messages.genInvalidProtocol("Invalid command. Expecting HANDSHAKE_RESPONSE " +
-                                "or CONNECTION_REFUSED"));
-                    }
+                // Create a new socket for the current peer if failed, just exit
+                try {
+                    socket = new Socket(remoteHostPort.host, remoteHostPort.port);
+                } catch (Exception e) {
+                    log.info("error creating socket. could not connect to peer " + remoteHostPort.toString());
+                    close();
+                    return;
                 }
-            } catch(IOException e) {
-                System.out.println("ERROR here IO Exception");
-                e.printStackTrace();
-                listener.shutdownNow();
-                sender.shutdownNow();
-                background.shutdownNow();
+
+                // Create reader and writer for the connection and update the output
+                createWriterAndReader();
+                updateOutput(output);
+
+                // Initiate a HANDSHAKE_REQUEST to the peer
+                sendMessage(Messages.genHandshakeRequest(ServerMain.localHostPort));
+
+                // Now wait for a response
+                try {
+                    String res = input.readLine();
+
+                    //System.out.println("Received: " + res);
+
+                    Document resDoc = Document.parse(res);
+                    String command = resDoc.getString("command");
+
+                    // HANDSHAKE_RESPONSE
+                    if (command.equals(Messages.HANDSHAKE_RESPONSE)) {
+                        // Connection successful! Submit a listener to the thread, sync peers and return
+                        listener.submit(new Listener());
+                        initSyncPeers();
+                        log.info("successfully connected to " + remoteHostPort);
+                        return;
+                    }
+                    // CONNECTION_REFUSED
+                    else if (command.equals(Messages.CONNECTION_REFUSED)) {
+                        // Connection refused :( Time to look for a new connection
+                        // Get the peers
+                        // Check if the peers received is a correct JSON list, otherwise send an INVALID_PROTOCOL
+                        Object o = resDoc.get("peers");
+                        if (o instanceof ArrayList) {
+                            // Close everything
+                            try {
+                                socket.close();
+                                socket = null;
+                                input.close();
+                                input = null;
+                                output.close();
+                                output = null;
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+
+                            // Append to the queue
+                            ArrayList<Document> peersDocs = (ArrayList)o;
+                            for (Document peerDoc : peersDocs) {
+                                queue.add(new HostPort(peerDoc));
+                            }
+
+                        } else {
+                            // Send invalid protocol and try to connect to the next peer
+                            sendMessage(Messages.genInvalidProtocol("peers should be a list"));
+                            close();
+                        }
+                    }
+                    // Anything else so send an INVALID_PROTOCOL
+                    else {
+                        sendMessage(Messages.genInvalidProtocol("expecting HANDSHAKE_RESPONSE or CONNECTION_REFUSED"));
+                        close();
+                        return;
+                    }
+                } catch (IOException e) {
+                    log.severe("error happened when waiting for peer to respond to HANDSHAKE_REQUEST");
+                    // Close the connection
+                    close();
+                }
             }
+
+            // Reached here if unable to connect to all the peers
+            log.info("couldn't connect to any peer, all peers may be offline or in an error state");
+            close();
         }
     }
 }
