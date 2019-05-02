@@ -38,7 +38,7 @@ public class FileModifyResponse extends BaseRunnable {
 		}
 		//if file content does not already exist then print a notification and stop the loop
 		else if (fileSystemManager.fileNameExists(pathName, fileDescriptor.getString("md5"))) {
-			doc.append("message", "filepath does not exist");
+			doc.append("message", "exact file already exists");
 			doc.append("status", false);
 			sendMessage(doc.toJson());
 		} else {
@@ -46,16 +46,22 @@ public class FileModifyResponse extends BaseRunnable {
 				if (fileSystemManager.modifyFileLoader(pathName,
 						fileDescriptor.getString("md5"),
 						fileDescriptor.getLong("lastModified"))) {
-					doc.append("message", "file loader ready");
-					doc.append("status", true);
-					sendMessage(doc.toJson());
-					if (!fileSystemManager.checkShortcut(pathName)) {
-						ArrayList<String> messages = Messages.genFileBytesRequests(fileDescriptor, pathName);
 
+					if (!fileSystemManager.checkShortcut(pathName)) {
+						doc.append("message", "file loader ready");
+						doc.append("status", true);
+						sendMessage(doc.toJson());
+
+						ArrayList<String> messages = Messages.genFileBytesRequests(fileDescriptor, pathName);
 						for (String message : messages) {
 							sendMessage(message);
 						}
 
+					}
+					else {
+						doc.append("message", "file created from local copy");
+						doc.append("status", true);
+						sendMessage(doc.toJson());
 					}
 
 
@@ -68,10 +74,8 @@ public class FileModifyResponse extends BaseRunnable {
 				doc.append("message", "file loader already in progress");
 				doc.append("status", false);
 				sendMessage(doc.toJson());
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				doc.append("message", "error creating file loader");
 				doc.append("status", false);
 				sendMessage(doc.toJson());
