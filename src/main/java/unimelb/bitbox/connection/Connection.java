@@ -175,8 +175,8 @@ public abstract class Connection {
         public void run() {
             try {
                 String in;
-                while ((in = input.readLine()) != null) {
-
+                while (true) {
+                    in = input.readLine();
                     Document doc = Document.parse(in);
 
                     //System.out.println("Received: " + doc.toJson());
@@ -193,6 +193,7 @@ public abstract class Connection {
                     if (command.equals(Messages.INVALID_PROTOCOL)) {
                         close();
                         connectionObserver.retry(fileSystemManager, remoteHostPort);
+                        return;
                     }
                     else if (command.equals(Messages.FILE_CREATE_REQUEST)) {
                         String createRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
@@ -316,18 +317,14 @@ public abstract class Connection {
                         close();
                     }
                 }
-
-                log.info("peer has closed the connection");
-                close();
             }
             // When the peer has closed the connection
             catch (IOException e) {
                 e.printStackTrace();
-                // Retry connection
-                connectionObserver.retry(fileSystemManager, remoteHostPort);
-
                 log.info("peer has unexpectedly closed the connection");
                 close();
+                // Retry connection
+                connectionObserver.retry(fileSystemManager, remoteHostPort);
             }
         }
     }
