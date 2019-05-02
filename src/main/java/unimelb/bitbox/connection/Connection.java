@@ -124,13 +124,11 @@ public abstract class Connection {
 
         @Override
         public void run() {
-            String in;
             try {
-                while ((in = input.readLine()) != null) {
+                while (true) {
+                    String in = input.readLine();
                     Document doc = Document.parse(in);
                     String command = doc.getString("command");
-
-                    System.out.println(in);
 
                     // Received INVALID_PROTOCOL, close the connection
                     if (command.equals(Messages.INVALID_PROTOCOL)) {
@@ -261,8 +259,8 @@ public abstract class Connection {
                 }
 
                 // Enter here when the peer has closed the connection
-                log.info("peer unexpectedly closed connection");
-                close();
+               // log.info("peer unexpectedly closed connection");
+               // close();
             }
             catch (SocketException e) {
                 // Received a Connection Reset TCP RST so close the connection and try again
@@ -272,6 +270,11 @@ public abstract class Connection {
             }
             catch (IOException e) {
                 log.severe("error happened when reading input from peer: " + e.getMessage());
+                close();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                log.severe("here" + e.getMessage());
                 close();
             }
         }
