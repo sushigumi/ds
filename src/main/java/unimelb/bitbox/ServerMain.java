@@ -58,7 +58,7 @@ public class ServerMain implements FileSystemObserver {
 		// Connect to all the peers first
 		String[] peers = Configuration.getConfigurationValue("peers").split(",");
 		for (String peer : peers) {
-
+			ConnectionManager.getInstance().connect(fileSystemManager, peer);
 		}
 
 		// Start the server
@@ -68,6 +68,8 @@ public class ServerMain implements FileSystemObserver {
 			while (true) {
 				try {
 					Socket socket = serverSocket.accept();
+
+					ConnectionManager.getInstance().accept(fileSystemManager, socket);
 				} catch (IOException e) {
 					log.severe("error occurred when accepting connection");
 				}

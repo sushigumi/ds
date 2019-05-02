@@ -12,7 +12,7 @@ import unimelb.bitbox.util.FileSystemManager.FileSystemEvent;
  * @author yanli
  *
  */
-public class FileDeleteRequest extends BaseRunnable
+public class FileDeleteRequest extends EventProcess
 {
 	private FileSystemEvent fileSystemEvent;
 
