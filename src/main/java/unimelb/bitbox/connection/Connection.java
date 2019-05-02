@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 /**
  * Represents a TCP connection between two peers.
@@ -24,10 +25,11 @@ import java.util.concurrent.Executors;
  * Similarly, if a CONNECTION_REFUSED message is received, the connection must be closed.
  */
 public abstract class Connection {
-    Socket socket; // Other peer's socket
-    boolean isIncoming;
+    static Logger log = Logger.getLogger(Connection.class.getName());
 
-    HostPort localHostPort;
+    Socket socket; // Other peer's socket
+    final boolean isIncoming;
+
     HostPort remoteHostPort;
 
     BufferedWriter output;
@@ -38,66 +40,57 @@ public abstract class Connection {
     ExecutorService background;
 
     FileSystemManager fileSystemManager;
-    ConnectionObserver observer;
+    ConnectionObserver connectionObserver;
 
     //TODO might need hashmap here to count the number of files needed to receive if not done in one sitting
     //TODO updating while bytes response comes in
 
     /**
-     * Called when receiving a connection from another peer
-     * Only when receiving a connection do we add to the counter of connections based on the
-     * maximumIncomingConnections parameter in the properties file
-     * @param socket
-     * @param localHostPort
+     * Called when making a connection to another peer (Outgoing connection)
+     * @param fileSystemManager
+     * @param connectionObserver
      */
-    Connection(FileSystemManager fileSystemManager, Socket socket, HostPort localHostPort) {
-        this.socket = socket;
-        this.localHostPort = localHostPort;
+    Connection(FileSystemManager fileSystemManager, ConnectionObserver connectionObserver) {
         this.fileSystemManager = fileSystemManager;
-        this.isIncoming = true;
+        this.remoteHostPort = null;
+        this.socket = null;
+        this.isIncoming = false;
+        this.connectionObserver = connectionObserver;
 
-        createWriterAndReader();
-
+        // Initialise the background threads
         this.listener = Executors.newSingleThreadExecutor();
-
-        // Create the single thread executor to send messages based on a queue when it requires messages to be
-        // sent
         this.sender = Executors.newSingleThreadExecutor();
         this.background = Executors.newSingleThreadExecutor();
     }
 
     /**
-     * Called when making a connection to another peer
-     * So this peer needs to send a handshake request to the other peer
-     * @param localHostPort
+     * Called when receiving a connection from another peer (Incoming connection)
+     * @param fileSystemManager
+     * @param socket
+     * @param connectionObserver
      */
-    Connection(FileSystemManager fileSystemManager, HostPort localHostPort) {
-        this.localHostPort = localHostPort;
+    Connection(FileSystemManager fileSystemManager, Socket socket, ConnectionObserver connectionObserver) {
         this.fileSystemManager = fileSystemManager;
-        this.isIncoming = false;
+        this.remoteHostPort = null;
+        this.socket = socket;
+        this.isIncoming = true;
+        this.connectionObserver = connectionObserver;
 
+        // Initialise the background threads
         this.listener = Executors.newSingleThreadExecutor();
-
-        // Create the single thread executor to send messages based on a queue when it requires messages to be
-        // sent
         this.sender = Executors.newSingleThreadExecutor();
         this.background = Executors.newSingleThreadExecutor();
     }
 
-    void updateRemoteHostPort(HostPort remoteHostPort) {
-        this.remoteHostPort = remoteHostPort;
-    }
-
-    void addConnectionObserver(ConnectionObserver observer) {
-        this.observer = observer;
-    }
-
+    /**
+     * Create a writer (Buffered Writer) and a reader (Buffered Reader) for the socket
+     */
     void createWriterAndReader() {
         try {
             input = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
             output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
         } catch (IOException e) {
-            System.out.println("HERE IS THE PROBLEM");
+            log.severe("unable to create writer and reader for peer " + remoteHostPort.toString());
             e.printStackTrace();
             try {
                 output.close();
@@ -110,20 +103,38 @@ public abstract class Connection {
     }
 
     /**
+     * Close the current connection
+     */
+    void close() {
+        // Close all open sockets, readers, writers, and threads
+        try {
+            if (socket != null) socket.close();
+            if (input != null) input.close();
+            if (output != null) output.close();
+            listener.shutdownNow();
+            sender.shutdownNow();
+
+            // Shutdown is used here to allow all the tasks in the queue to be finished before closing the connection
+            background.shutdown();
+
+            // Remove the connection from the manager
+            connectionObserver.closeConnection(this, isIncoming);
+
+        } catch (IOException e) {
+            log.severe("error occurred when trying to close the connection");
+            e.printStackTrace();
+        } catch (Exception e) {
+            log.severe(e.getMessage());
+        }
+    }
+
+    /**
      * Accepts a FileSystemEvent as an argument and constructs an appropriate Runnable to be submitted
      * to the sender ExecutorService
      * @param fileSystemEvent
      */
     public void submitEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
         switch (fileSystemEvent.event) {
-            /*
-            case FILE_CREATE:
-                String request = Messages.genFileBytesRequests(fileSystemEvent.fileDescriptor.toDoc(), fileSystemEvent.pathName).remove(0);
-                // TODO change to sending FILE_CREATE_REQUEST
-                sender.submit(new FileBytesResponse(output, fileSystemManager, Document.parse(request)));
-                break;
-                */
-
             case FILE_CREATE:
                 sender.submit(new FileCreateRequest(output, fileSystemEvent));
                 break;
@@ -158,20 +169,6 @@ public abstract class Connection {
         }
     }
 
-    void closeConnection() {
-        try {
-            socket.close();
-            input.close();
-            output.close();
-            listener.shutdownNow();
-            sender.shutdownNow();
-            background.shutdownNow();
-            observer.closeConnection(remoteHostPort, isIncoming);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     class Listener implements Runnable {
 
         @Override
@@ -182,11 +179,11 @@ public abstract class Connection {
 
                     Document doc = Document.parse(in);
 
-                    System.out.println("Received: " + doc.toJson());
+                    //System.out.println("Received: " + doc.toJson());
 
                     if (doc.getString("command") == null) {
                         background.submit(new InvalidProtocol(output, "message must contain command key"));
-                        closeConnection();
+                        close();
                         return;
                     }
 
@@ -194,14 +191,14 @@ public abstract class Connection {
 
                     // Invalid protocol received so close the connection then try to reconnect at least three times
                     if (command.equals(Messages.INVALID_PROTOCOL)) {
-                        closeConnection();
-                        observer.interruptConnection(remoteHostPort, localHostPort, fileSystemManager);
+                        close();
+                        connectionObserver.retry(fileSystemManager, remoteHostPort);
                     }
                     else if (command.equals(Messages.FILE_CREATE_REQUEST)) {
                         String createRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
                         if (createRequest != null) {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, createRequest));
-                            closeConnection();
+                            close();
                             return;
                         }
                         else {
@@ -212,7 +209,7 @@ public abstract class Connection {
                         String createResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
                         if (createResponse != null) {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, createResponse));
-                            closeConnection();
+                            close();
                             return;
                         }
                     }
@@ -220,7 +217,7 @@ public abstract class Connection {
                         String deleteRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
                         if (deleteRequest != null) {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, deleteRequest));
-                            closeConnection();
+                            close();
                             return;
                         }
                         else {
@@ -231,7 +228,7 @@ public abstract class Connection {
                         String deleteResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
                         if (deleteResponse != null) {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, deleteResponse));
-                            closeConnection();
+                            close();
                             return;
                         }
                     }
@@ -239,7 +236,7 @@ public abstract class Connection {
                         String modifyRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
                         if (modifyRequest != null) {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, modifyRequest));
-                            closeConnection();
+                            close();
                             return;
                         }
                         else {
@@ -250,7 +247,7 @@ public abstract class Connection {
                         String modifyResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
                         if (modifyResponse != null) {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, modifyResponse));
-                            closeConnection();
+                            close();
                             return;
                         }
                     }
@@ -258,7 +255,7 @@ public abstract class Connection {
                         String bytesRequest = MessageValidator.getInstance().validateFileBytesRequest(doc);
                         if (bytesRequest != null) {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, bytesRequest));
-                            closeConnection();
+                            close();
                             return;
                         }
                         else {
@@ -269,7 +266,7 @@ public abstract class Connection {
                         String bytesResponse = MessageValidator.getInstance().validateFileBytesResponse(doc);
                         if (bytesResponse != null) {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, bytesResponse));
-                            closeConnection();
+                            close();
                             return;
                         }
                         else {
@@ -280,7 +277,7 @@ public abstract class Connection {
                         String dirCreateRequest = MessageValidator.getInstance().validateDirectoryChangeRequest(doc);
                         if (dirCreateRequest != null) {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirCreateRequest));
-                            closeConnection();
+                            close();
                             return;
                         }
                         else {
@@ -291,7 +288,7 @@ public abstract class Connection {
                         String dirCteateResponse = MessageValidator.getInstance().validateDirectoryChangeResponse(doc);
                         if (dirCteateResponse != null) {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirCteateResponse));
-                            closeConnection();
+                            close();
                             return;
                         }
                     }
@@ -299,7 +296,7 @@ public abstract class Connection {
                         String dirDeleteRequest = MessageValidator.getInstance().validateDirectoryChangeRequest(doc);
                         if (dirDeleteRequest != null) {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirDeleteRequest));
-                            closeConnection();
+                            close();
                             return;
                         }
                         else {
@@ -310,24 +307,27 @@ public abstract class Connection {
                         String dirDeleteResponse = MessageValidator.getInstance().validateDirectoryChangeResponse(doc);
                         if (dirDeleteResponse != null) {
                             background.submit(new InvalidProtocol(output, InvalidProtocolType.MISSING_FIELD, dirDeleteResponse));
-                            closeConnection();
+                            close();
                             return;
                         }
                     }
                     else {
                         background.submit(new InvalidProtocol(output, InvalidProtocolType.INVALID_COMMAND));
-                        closeConnection();
+                        close();
                     }
                 }
 
-                System.out.println("Peer has closed the connection");
-                closeConnection();
+                log.info("peer has closed the connection");
+                close();
             }
             // When the peer has closed the connection
             catch (IOException e) {
                 e.printStackTrace();
-                System.out.println("Peer has closed the connection");
-                closeConnection();
+                // Retry connection
+                connectionObserver.retry(fileSystemManager, remoteHostPort);
+
+                log.info("peer has unexpectedly closed the connection");
+                close();
             }
         }
     }
