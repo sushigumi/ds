@@ -106,6 +106,8 @@ public class ConnectionManager implements ConnectionObserver {
         if (isIncoming) {
             nConnections--;
         }
+        // Remove from retries list
+        retries.remove(connection.remoteHostPort.toString());
 
         peers.remove(connection);
         log.info("connection has been closed");
@@ -121,9 +123,11 @@ public class ConnectionManager implements ConnectionObserver {
     @Override
     public void retry(FileSystemManager fileSystemManager, HostPort remoteHostPort) {
         if (retries.get(remoteHostPort.toString()) < MAX_RETRIES) {
+            log.info("retrying connection to " + remoteHostPort.toString());
             peers.add(new OutgoingConnection(fileSystemManager, this, remoteHostPort));
             retries.put(remoteHostPort.toString(), retries.get(remoteHostPort.toString()) + 1);
         } else {
+            log.info("exceeded retry limit. closing connection");
             retries.remove(remoteHostPort.toString());
         }
     }

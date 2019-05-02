@@ -323,6 +323,9 @@ public abstract class Connection {
             // When the peer has closed the connection
             catch (IOException e) {
                 e.printStackTrace();
+                // Retry connection
+                connectionObserver.retry(fileSystemManager, remoteHostPort);
+
                 log.info("peer has unexpectedly closed the connection");
                 close();
             }
