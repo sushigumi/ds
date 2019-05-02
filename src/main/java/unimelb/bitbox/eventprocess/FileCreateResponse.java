@@ -45,6 +45,7 @@ public class FileCreateResponse extends BaseRunnable
 		}
 		else if(fileSystemManager.fileNameExists(pathName)) 
 		{
+			// TODO if newer then request for bytes and delete maybe call modify file loader instead
 			doc.append("message", "pathname already exists");
 			doc.append("status", false);
 			sendMessage(doc.toJson());
