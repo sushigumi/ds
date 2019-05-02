@@ -23,8 +23,7 @@ public abstract class EventProcess implements Runnable {
 
     public void sendMessage(String message) {
         try {
-            writer.write(message);
-            writer.newLine();
+            writer.write(message + "\n");
             writer.flush();
         } catch (IOException e) {
             log.severe("error writing message to peer");
