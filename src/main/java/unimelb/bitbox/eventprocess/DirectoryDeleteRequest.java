@@ -4,7 +4,7 @@ import unimelb.bitbox.messages.Messages;
 
 import java.io.BufferedWriter;
 
-public class DirectoryDeleteRequest extends BaseRunnable {
+public class DirectoryDeleteRequest extends EventProcess {
 
     private String pathName;
 

@@ -12,7 +12,7 @@ import unimelb.bitbox.util.FileSystemManager;
  * @author yanli
  *
  */
-public class FileCreateResponse extends BaseRunnable
+public class FileCreateResponse extends EventProcess
 {
 	private Document received;
 	private FileSystemManager fileSystemManager;
@@ -96,10 +96,10 @@ public class FileCreateResponse extends BaseRunnable
 				doc.append("message", "file is currently being modified");
 				doc.append("status", false);
 				sendMessage(doc.toJson());
-				e.printStackTrace();
+				//e.printStackTrace();
 			} catch (NoSuchAlgorithmException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//e.printStackTrace();
 			}
 
 		}

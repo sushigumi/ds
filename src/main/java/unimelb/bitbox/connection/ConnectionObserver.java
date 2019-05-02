@@ -5,4 +5,6 @@ import unimelb.bitbox.util.HostPort;
 
 public interface ConnectionObserver {
     void closeConnection(Connection connection, boolean isIncoming);
+
+    void retry(Connection connection);
 }

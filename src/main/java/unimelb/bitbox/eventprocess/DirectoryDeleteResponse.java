@@ -6,7 +6,7 @@ import unimelb.bitbox.util.FileSystemManager;
 
 import java.io.BufferedWriter;
 
-public class DirectoryDeleteResponse extends BaseRunnable {
+public class DirectoryDeleteResponse extends EventProcess {
 
     private FileSystemManager fileSystemManager;
     private Document request;
