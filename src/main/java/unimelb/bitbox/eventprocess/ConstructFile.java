@@ -43,18 +43,8 @@ public class ConstructFile extends BaseRunnable {
             return;
         }
 
-//        Document fileDescriptor = (Document) fileBytesResponse.get("fileDescriptor");
-//        long length = fileBytesResponse.getLong("length");
-
         // Safe file name so can write successfully
         if (fileSystemManager.isSafePathName(pathName)) {
-            // TODO Remove
-//            try {
-//                fileSystemManager.createFileLoader(pathName, fileDescriptor.getString("md5"), length, fileDescriptor.getLong("lastModified"));
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-            // If there is a failure in writing then should request for the bytes again
             try {
                 fileSystemManager.writeFile(pathName, bytes, position);
                 fileSystemManager.checkWriteComplete(pathName);
@@ -71,8 +61,7 @@ public class ConstructFile extends BaseRunnable {
         }
         // Unsafe path name so don't do anything
         else {
-            // TODO more?
-            System.out.println("WARNING: Trying to write to an unsafe path");
+            log.severe("WARNING: trying to write to an unsafe path");
         }
     }
 }
