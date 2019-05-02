@@ -33,6 +33,15 @@ public class ConstructFile extends BaseRunnable {
         String encodedBytes = fileBytesResponse.getString("content");
         ByteBuffer bytes = ByteBuffer.wrap(Base64.getDecoder().decode(encodedBytes));
         long position = fileBytesResponse.getLong("position");
+        boolean status = fileBytesResponse.getBoolean("status");
+
+        // Status is false. So something must have happened reading the file. So we need
+        // to request for the file again
+        if (!status) {
+            Document fileDescriptor = (Document) fileBytesResponse.get("fileDescriptor");
+            sendMessage(Messages.genFileBytesRequest(fileDescriptor, pathName, position));
+            return;
+        }
 
 //        Document fileDescriptor = (Document) fileBytesResponse.get("fileDescriptor");
 //        long length = fileBytesResponse.getLong("length");
@@ -50,11 +59,13 @@ public class ConstructFile extends BaseRunnable {
                 fileSystemManager.writeFile(pathName, bytes, position);
                 fileSystemManager.checkWriteComplete(pathName);
             }
-            // Cannot write the bytes
+            // Cannot write the bytes so request again.
             catch (IOException e) {
                 Document fileDescriptor = (Document) fileBytesResponse.get("fileDescriptor");
                 sendMessage(Messages.genFileBytesRequest(fileDescriptor, pathName, position));
-            } catch (NoSuchAlgorithmException e) {
+            }
+            // Ignore this exception
+            catch (NoSuchAlgorithmException e) {
                 e.printStackTrace();
             }
         }
