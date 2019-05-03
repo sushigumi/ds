@@ -32,7 +32,7 @@ public class ServerMain implements FileSystemObserver {
 
 	@Override
 	public void processFileSystemEvent(FileSystemEvent fileSystemEvent) {
-
+		ConnectionManager.getInstance().processFileSystemEvent(fileSystemEvent);
 	}
 
 	/**

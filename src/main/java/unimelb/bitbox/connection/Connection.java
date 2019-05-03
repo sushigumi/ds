@@ -127,8 +127,17 @@ public abstract class Connection {
             try {
                 while (true) {
                     String in = input.readLine();
+
+                    // Peer has closed the connection and EOF received
+                    if (in == null) {
+                        log.info("peer is disconnected");
+                        close();
+                        return;
+                    }
                     Document doc = Document.parse(in);
                     String command = doc.getString("command");
+
+                    //System.out.println("Received: " + command);  // Debugging async
 
                     // Received INVALID_PROTOCOL, close the connection
                     if (command.equals(Messages.INVALID_PROTOCOL)) {
