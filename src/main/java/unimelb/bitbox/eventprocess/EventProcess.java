@@ -1,5 +1,7 @@
 package unimelb.bitbox.eventprocess;
 
+import unimelb.bitbox.util.Document;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -22,6 +24,7 @@ public abstract class EventProcess implements Runnable {
     }
 
     public void sendMessage(String message) {
+        //System.out.println(Document.parse(message).getString("command")); // Debugging async
         try {
             writer.write(message + "\n");
             writer.flush();
