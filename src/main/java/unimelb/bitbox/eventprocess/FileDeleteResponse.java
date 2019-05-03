@@ -9,7 +9,7 @@ import unimelb.bitbox.util.FileSystemManager;
  * @author yanli
  *
  */
-public class FileDeleteResponse extends BaseRunnable
+public class FileDeleteResponse extends EventProcess
 {
 	private Document received;
 	private FileSystemManager fileSystemManager;

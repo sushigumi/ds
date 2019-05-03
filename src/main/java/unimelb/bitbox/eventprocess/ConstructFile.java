@@ -15,7 +15,7 @@ import java.util.Base64;
  * It blocks until receiving all the required messages to fully construct the required file
  * before returning
  */
-public class ConstructFile extends BaseRunnable {
+public class ConstructFile extends EventProcess {
     private FileSystemManager fileSystemManager;
     private Document fileBytesResponse;
 

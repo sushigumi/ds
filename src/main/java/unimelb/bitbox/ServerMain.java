@@ -20,7 +20,7 @@ public class ServerMain implements FileSystemObserver {
 	protected FileSystemManager fileSystemManager;
 
 	public static final HostPort localHostPort = new HostPort(Configuration.getConfigurationValue("advertisedName"),
-															  Integer.parseInt(Configuration.getConfigurationValue("port")));
+													Integer.parseInt(Configuration.getConfigurationValue("port")));
 
 	private ScheduledExecutorService timer;
 
@@ -32,8 +32,6 @@ public class ServerMain implements FileSystemObserver {
 
 	@Override
 	public void processFileSystemEvent(FileSystemEvent fileSystemEvent) {
-		// TODO: process events
-		//Make a new thread
 		ConnectionManager.getInstance().processFileSystemEvent(fileSystemEvent);
 	}
 
@@ -41,7 +39,7 @@ public class ServerMain implements FileSystemObserver {
 	 * Start the server
 	 */
 	private void start() {
-		// Generate a timer to peridocially sync events to peers
+		// Generate a timer to periodically sync events to peers
 		Runnable periodicSync = new Runnable() {
 			@Override
 			public void run() {
@@ -55,32 +53,31 @@ public class ServerMain implements FileSystemObserver {
 
 		timer = Executors.newSingleThreadScheduledExecutor();
 		long syncInterval = Long.parseLong(Configuration.getConfigurationValue("syncInterval"));
-		timer.scheduleAtFixedRate(periodicSync, syncInterval, syncInterval, TimeUnit.SECONDS);
+		timer.scheduleAtFixedRate(periodicSync, 0, syncInterval, TimeUnit.SECONDS);
 
-		// Create a server socket
-		try {
-			ServerSocket serverSocket = new ServerSocket(localHostPort.port);
-
-			// Connect to the peers
-			String[] peers = Configuration.getConfigurationValue("peers").split(",");
-			ConnectionManager.getInstance().initiateConnection(fileSystemManager, peers);
-
-			// Loop to accept incoming connections
-			try {
-				while (true) {
-					Socket socket = serverSocket.accept();
-
-					ConnectionManager.getInstance().acceptConnection(fileSystemManager, socket);
-				}
-			} catch (IOException e) {
-				log.severe("Error has occurred. Please restart the server");
-				e.printStackTrace();
-			}
-		} catch (IOException e) {
-			log.severe("Failed to start server");
-			e.printStackTrace();
-			System.exit(1);
+		// Connect to all the peers first
+		String[] peers = Configuration.getConfigurationValue("peers").split(",");
+		for (String peer : peers) {
+			ConnectionManager.getInstance().connect(fileSystemManager, peer);
 		}
 
+		// Start the server
+		int portNumber = Integer.parseInt(Configuration.getConfigurationValue("port"));
+		try {
+			ServerSocket serverSocket = new ServerSocket(portNumber);
+			while (true) {
+				try {
+					Socket socket = serverSocket.accept();
+
+					ConnectionManager.getInstance().accept(fileSystemManager, socket);
+				} catch (IOException e) {
+					log.severe("error occurred when accepting connection");
+				}
+			}
+
+		} catch (IOException e) {
+			log.severe("unable to start server. exiting");
+			System.exit(1);
+		}
 	}
 }

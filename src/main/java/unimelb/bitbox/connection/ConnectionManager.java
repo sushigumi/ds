@@ -6,77 +6,77 @@ import unimelb.bitbox.util.HostPort;
 
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.logging.Logger;
 
-/**
- * Handles connections and is a singleton
- */
 public class ConnectionManager implements ConnectionObserver {
-    private static Logger log = Logger.getLogger(ConnectionManager.class.getName());
+    private static Logger log = Logger.getLogger(ConnectionObserver.class.getName());
 
-    public final int MAXIMUM_CONNECTIONS;
-    public final int MAX_RETRIES = 3;
-    private int nConnections;  // number of incoming connections currently active
-
+    public final int MAX_INCOMING_CONNECTIONS;
     private ArrayList<Connection> peers;
-    private HashMap<String, Integer> retries;
+    private int nIncomingConnections;
 
-    private static ConnectionManager instance = new ConnectionManager();
+
+    private static ConnectionManager ourInstance = new ConnectionManager();
 
     public static ConnectionManager getInstance() {
-        return instance;
+        return ourInstance;
     }
 
     private ConnectionManager() {
-        MAXIMUM_CONNECTIONS = Integer.parseInt(Configuration.getConfigurationValue("maximumIncommingConnections"));
         peers = new ArrayList<>();
-        retries = new HashMap<>();
-        nConnections = 0;
+        nIncomingConnections = 0;
+        MAX_INCOMING_CONNECTIONS = Integer.parseInt(Configuration.getConfigurationValue("maximumIncommingConnections"));
     }
 
     /**
-     * Called to initiate a connection to different peers on start of the server
-     * This method is used to allow connections to take place on a separate thread to not block the server
-     * while making connections
+     * Connect to a specific peer
+     * @param fileSystemManager
+     * @param remoteHostPortString
      */
-    public void initiateConnection(FileSystemManager fileSystemManager, String[] hostPorts) {
-        for (String hostPort : hostPorts) {
-            HostPort remoteHostPort = new HostPort(hostPort);
-            retries.put(remoteHostPort.toString(), 0);
-            peers.add(new OutgoingConnection(fileSystemManager, this, remoteHostPort));
-        }
+    public void connect(FileSystemManager fileSystemManager, String remoteHostPortString) {
+        peers.add(new OutgoingConnection(fileSystemManager, this, new HostPort(remoteHostPortString)));
     }
 
     /**
-     * Called when a connection is accepted from a peer
-     * Increments the number of incoming connections
+     * Accept a connection from a peer
      * @param fileSystemManager
      * @param socket
      */
-    public void acceptConnection(FileSystemManager fileSystemManager, Socket socket) {
-        peers.add(new IncomingConnection(fileSystemManager, socket, this));
-        nConnections++;
-    }
-
-    @Override
-    public void updateRetries(HostPort remoteHostPort) {
-        if (retries.containsKey(remoteHostPort.toString())) {
-            retries.put(remoteHostPort.toString(), retries.get(remoteHostPort.toString()) + 1);
-        } else {
-            retries.put(remoteHostPort.toString(), 0);
-        }
+    public void accept(FileSystemManager fileSystemManager, Socket socket) {
+        nIncomingConnections++;
+        peers.add(new IncomingConnection(fileSystemManager, this, socket));
     }
 
     /**
-     * Get a list of host ports of peers that are currently connected
-     * @return
+     * A connection is closed, so remove it from the list of connections
+     * If it is an incoming connection, reduce nIncomingConnections
+     * @param connection
+     * @param isIncoming
      */
-    public ArrayList<HostPort> getPeersHostPort(HostPort currentRemoteHostPort) {
+    @Override
+    public void closeConnection(Connection connection, boolean isIncoming) {
+        if (isIncoming) {
+            nIncomingConnections--;
+        }
+        peers.remove(connection);
+
+        log.info("successfully closed connection");
+        log.info(peers.size() + " peers currently connected");
+    }
+
+    @Override
+    public void retry(Connection connection) {
+        log.info("retrying connection..");
+        connect(connection.fileSystemManager, connection.remoteHostPort.toString());
+    }
+
+    /**
+     * Get a list of HostPorts from peers
+     */
+    public ArrayList<HostPort> getPeersHostPorts() {
         ArrayList<HostPort> hostPorts = new ArrayList<>();
         for (Connection peer : peers) {
-            if (peer.remoteHostPort != null && !peer.remoteHostPort.equals(currentRemoteHostPort)) {
+            if (peer.remoteHostPort != null) {
                 hostPorts.add(peer.remoteHostPort);
             }
         }
@@ -85,58 +85,20 @@ public class ConnectionManager implements ConnectionObserver {
     }
 
     /**
-     * Called when a FileSystemEvent is received on the Server Main and propagates the file system event
-     * too all peers
+     * Process a file system event generated by the system and send it to all the peers
      * @param fileSystemEvent
      */
     public void processFileSystemEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
-        for (Connection peer: peers) {
-            peer.submitEvent(fileSystemEvent);
+        for (Connection peer : peers) {
+            peer.processFileSystemEvent(fileSystemEvent);
         }
     }
 
     /**
-     * A connection has been closed and remove the peer from peers list by comparing it
-     * based on its pointer
-     * @param connection
-     * @param isIncoming
-     */
-    @Override
-    public void closeConnection(Connection connection, boolean isIncoming) {
-        if (isIncoming) {
-            nConnections--;
-        }
-        // Remove from retries list
-        retries.remove(connection.remoteHostPort.toString());
-
-        peers.remove(connection);
-        log.info("connection has been closed");
-        log.info(peers.size() + " peers currently connected");
-    }
-
-    /**
-     * Called when this peer receives an invalid protocol and attempts to reconnect to the peer who
-     * closed the connection
-     * @param fileSystemManager
-     * @param remoteHostPort
-     */
-    @Override
-    public void retry(FileSystemManager fileSystemManager, HostPort remoteHostPort) {
-        if (retries.get(remoteHostPort.toString()) < MAX_RETRIES) {
-            log.info("retrying connection to " + remoteHostPort.toString());
-            peers.add(new OutgoingConnection(fileSystemManager, this, remoteHostPort));
-            retries.put(remoteHostPort.toString(), retries.get(remoteHostPort.toString()) + 1);
-        } else {
-            log.info("exceeded retry limit. closing connection");
-            retries.remove(remoteHostPort.toString());
-        }
-    }
-
-    /**
-     * True if there are still available slots for incoming connection
+     * Returns true if still able to accept incoming connections
      * @return
      */
-    public boolean isAnyFreeConnection() {
-        return nConnections <= MAXIMUM_CONNECTIONS;
+    public boolean isAvailableConnections() {
+        return nIncomingConnections <= MAX_INCOMING_CONNECTIONS;
     }
 }

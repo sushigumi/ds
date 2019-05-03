@@ -1,7 +1,7 @@
 package unimelb.bitbox.connection;
 
 import unimelb.bitbox.ServerMain;
-import unimelb.bitbox.eventprocess.BaseRunnable;
+import unimelb.bitbox.eventprocess.EventProcess;
 import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
@@ -10,67 +10,70 @@ import unimelb.bitbox.util.HostPort;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.concurrent.Executors;
 
 public class IncomingConnection extends Connection {
-    IncomingConnection(FileSystemManager fileSystemManager, Socket socket, ConnectionObserver connectionObserver) {
-        super(fileSystemManager, socket, connectionObserver);
+    public IncomingConnection(FileSystemManager fileSystemManager, ConnectionObserver observer, Socket socket) {
+        this.fileSystemManager = fileSystemManager;
+        this.connectionObserver = observer;
+        this.remoteHostPort = null;
+        this.socket = socket;
+        this.isIncoming = true;
+        this.nRetries = 0;
 
-        // Create the writer and reader
-        createWriterAndReader();
+        // Initialise threads
+        this.listener = Executors.newSingleThreadExecutor();
+        this.sender = Executors.newSingleThreadExecutor();
+        this.background = Executors.newSingleThreadExecutor();
 
-        // Start the handshake
         listener.submit(new Handshake());
     }
 
-    private class Handshake extends BaseRunnable {
-        Handshake() {
-            super(output);
-        }
+    private class Handshake extends EventProcess {
 
         @Override
         public void run() {
-            // Listen for a message from the peer
-            try {
-                String msg = input.readLine();
-                Document doc = Document.parse(msg);
+            // Create the reader and writer and update writer
+            initInputOutput();
+            updateWriter(output);
 
+            // Get message received
+            try {
+                Document doc = Document.parse(input.readLine());
                 String command = doc.getString("command");
 
-                // HANDSHAKE_REQUEST
+                // HANDSHAKE_REQUEST received
                 if (command.equals(Messages.HANDSHAKE_REQUEST)) {
-                    // If still have space to accept the connection, send a HANDSHAKE_RESPONSE
-                    remoteHostPort = new HostPort((Document)doc.get("hostPort"));
-                    connectionObserver.updateRetries(remoteHostPort); // Update the number of retries
-
-                    // Send HANDSHAKE_RESPONSE
-                    if (ConnectionManager.getInstance().isAnyFreeConnection()) {
+                    // If there are still available connections then send HANDSHAKE_RESPONSE
+                    if (ConnectionManager.getInstance().isAvailableConnections()) {
+                        remoteHostPort = new HostPort((Document)doc.get("hostPort"));
                         sendMessage(Messages.genHandshakeResponse(ServerMain.localHostPort));
-                        listener.submit(new Listener());
 
-                        // Sync peers
-                        initSyncPeers();
+                        syncEvents();
 
-                        log.info("successfully connected to " + remoteHostPort);
+                        // Start listening for other messages from the peer
+                        listener.submit(new Listen());
+
+                        log.info("successfully connected to peer " + remoteHostPort);
                     }
-                    // Send CONNECTION_REFUSED
+                    // Otherwise CONNECTION_REFUSED
                     else {
-                        log.info("maximum number of incoming connections reached, closing connection");
-                        sendMessage(Messages.genConnectionRefused(ConnectionManager.getInstance().getPeersHostPort(remoteHostPort)));
+                        sendMessage(Messages.genConnectionRefused(ConnectionManager.getInstance().getPeersHostPorts()));
+
+                        // Close the connection
                         close();
                     }
                 }
-                // Received invalid message, so send INVALID_PROTOCOL
+                // Other message received, respond with INVALID_PROTOCOL and close connection
                 else {
-                    log.info("invalid message received");
                     sendMessage(Messages.genInvalidProtocol("expecting HANDSHAKE_REQUEST"));
                     close();
                 }
+
+            } catch (IOException e) {
+                log.severe("error receiving message from peer");
             }
-            // Found an error, close the connection and report to user
-            catch (IOException e) {
-                log.severe("error happened when the peer is trying to listen for a HANDSHAKE_REQUEST");
-                close();
-            }
+
         }
     }
 }
