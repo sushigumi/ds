@@ -6,7 +6,7 @@ import unimelb.bitbox.util.FileSystemManager;
 
 import java.io.BufferedWriter;
 
-public class FileBytesResponse extends BaseRunnable {
+public class FileBytesResponse extends EventProcess {
     private FileSystemManager fileSystemManager;
 
     private Document fileBytesRequest;

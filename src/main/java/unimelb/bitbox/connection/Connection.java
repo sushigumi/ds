@@ -1,35 +1,32 @@
 package unimelb.bitbox.connection;
 
 import unimelb.bitbox.eventprocess.*;
+import unimelb.bitbox.messages.InvalidProtocolType;
 import unimelb.bitbox.messages.MessageValidator;
 import unimelb.bitbox.messages.Messages;
-import unimelb.bitbox.messages.InvalidProtocolType;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
-/**
- * Represents a TCP connection between two peers.
- * Before asynchronous moving on to the asynchronous part of the protocol,
- * connections must either send a HANDSHAKE_REQUEST message and wait for a HANDSHAKE_RESPONSE message
- * or receive a HANDSHAKE_REQUEST and respond with a HANDSHAKE_RESPONSE message
- * If a HANDSHAKE_REQUEST is received but the maximum number of connections has been achieved, then
- * a CONNECTION_REFUSED message must be sent back to the peer and the connection is closed.
- * Similarly, if a CONNECTION_REFUSED message is received, the connection must be closed.
- */
+import static unimelb.bitbox.util.FileSystemManager.EVENT.FILE_CREATE;
+
 public abstract class Connection {
     static Logger log = Logger.getLogger(Connection.class.getName());
 
-    Socket socket; // Other peer's socket
-    final boolean isIncoming;
+    private final int MAX_RETRIES = 3;
 
+    FileSystemManager fileSystemManager;
+    boolean isIncoming;
+    int nRetries;
+
+    Socket socket;
     HostPort remoteHostPort;
 
     BufferedWriter output;
@@ -39,160 +36,112 @@ public abstract class Connection {
     ExecutorService sender;
     ExecutorService background;
 
-    FileSystemManager fileSystemManager;
     ConnectionObserver connectionObserver;
 
-    //TODO might need hashmap here to count the number of files needed to receive if not done in one sitting
-    //TODO updating while bytes response comes in
-
     /**
-     * Called when making a connection to another peer (Outgoing connection)
-     * @param fileSystemManager
-     * @param connectionObserver
+     * Initialise input (Buffered Reader) and output (Buffered Writer)
      */
-    Connection(FileSystemManager fileSystemManager, ConnectionObserver connectionObserver) {
-        this.fileSystemManager = fileSystemManager;
-        this.remoteHostPort = null;
-        this.socket = null;
-        this.isIncoming = false;
-        this.connectionObserver = connectionObserver;
-
-        // Initialise the background threads
-        this.listener = Executors.newSingleThreadExecutor();
-        this.sender = Executors.newSingleThreadExecutor();
-        this.background = Executors.newSingleThreadExecutor();
-    }
-
-    /**
-     * Called when receiving a connection from another peer (Incoming connection)
-     * @param fileSystemManager
-     * @param socket
-     * @param connectionObserver
-     */
-    Connection(FileSystemManager fileSystemManager, Socket socket, ConnectionObserver connectionObserver) {
-        this.fileSystemManager = fileSystemManager;
-        this.remoteHostPort = null;
-        this.socket = socket;
-        this.isIncoming = true;
-        this.connectionObserver = connectionObserver;
-
-        // Initialise the background threads
-        this.listener = Executors.newSingleThreadExecutor();
-        this.sender = Executors.newSingleThreadExecutor();
-        this.background = Executors.newSingleThreadExecutor();
-    }
-
-    /**
-     * Create a writer (Buffered Writer) and a reader (Buffered Reader) for the socket
-     */
-    void createWriterAndReader() {
+    public void initInputOutput() {
         try {
-            input = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
             output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
         } catch (IOException e) {
-            log.severe("unable to create writer and reader for peer " + remoteHostPort.toString());
-            e.printStackTrace();
-            try {
-                output.close();
-                input.close();
-                socket.close();
-            } catch (IOException e2) {
-                e2.printStackTrace();
-            }
+            log.severe("unable to create buffered writer");
+            // TODO exit
+        }
+
+        try {
+            input = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+        } catch (IOException e) {
+            log.severe("unable to created buffered reader");
+            //TODO exit
         }
     }
 
     /**
      * Close the current connection
      */
-    void close() {
-        // Close all open sockets, readers, writers, and threads
+    public void close() {
         try {
+            log.info("closing the connection for peer " + remoteHostPort);
             if (socket != null) socket.close();
             if (input != null) input.close();
             if (output != null) output.close();
+
             listener.shutdownNow();
             sender.shutdownNow();
+            background.shutdownNow();
 
-            // Shutdown is used here to allow all the tasks in the queue to be finished before closing the connection
-            background.shutdown();
-
-            // Remove the connection from the manager
             connectionObserver.closeConnection(this, isIncoming);
-
         } catch (IOException e) {
-            log.severe("error occurred when trying to close the connection");
-            e.printStackTrace();
-        } catch (Exception e) {
-            log.severe(e.getMessage());
+            log.severe("error closing the connection " + remoteHostPort);
         }
     }
 
     /**
-     * Accepts a FileSystemEvent as an argument and constructs an appropriate Runnable to be submitted
-     * to the sender ExecutorService
+     * Process a file system event and submits it to the sender to broadcast to the peer
      * @param fileSystemEvent
      */
-    public void submitEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
-        switch (fileSystemEvent.event) {
+    public void processFileSystemEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
+        switch(fileSystemEvent.event) {
             case FILE_CREATE:
                 sender.submit(new FileCreateRequest(output, fileSystemEvent));
                 break;
+
             case FILE_DELETE:
-                sender.submit(new FileDeleteRequest(output,fileSystemEvent));
+                sender.submit(new FileDeleteRequest(output, fileSystemEvent));
                 break;
+
             case FILE_MODIFY:
-                sender.submit(new FileModifyRequest(output,fileSystemEvent));
+                sender.submit(new FileModifyRequest(output, fileSystemEvent));
                 break;
+
             case DIRECTORY_CREATE:
                 sender.submit(new DirectoryCreateRequest(output, fileSystemEvent.pathName));
                 break;
+
             case DIRECTORY_DELETE:
                 sender.submit(new DirectoryDeleteRequest(output, fileSystemEvent.pathName));
                 break;
-
         }
-
     }
 
     /**
-     * Calls generateSyncEvents method of the File System Manager to synchronize files between all peers
-     * at the start of the connection.
-     * This method is only called at the start of each connection since further synchronized events will
-     * be generated collectively for all other events in the main loop
+     * Calls generateSyncEvents() from the file system manager and sends it to the peers. Usually called at the
+     * start of a connection.
      */
-    void initSyncPeers() {
-        ArrayList<FileSystemManager.FileSystemEvent> fileSystemEvents = fileSystemManager.generateSyncEvents();
-        // For each file system event send an appropriate message to the connected peer
-        for (FileSystemManager.FileSystemEvent event : fileSystemEvents) {
-            submitEvent(event);
+    void syncEvents() {
+        ArrayList<FileSystemManager.FileSystemEvent> events = fileSystemManager.generateSyncEvents();
+
+        for (FileSystemManager.FileSystemEvent event : events) {
+            processFileSystemEvent(event);
         }
     }
 
-    class Listener implements Runnable {
+    /**
+     * Runnable to listen to messages from a peer
+     */
+    class Listen implements Runnable {
 
         @Override
         public void run() {
             try {
-                String in;
                 while (true) {
-                    in = input.readLine();
-                    Document doc = Document.parse(in);
+                    String in = input.readLine();
 
-                    //System.out.println("Received: " + doc.toJson());
-
-                    if (doc.getString("command") == null) {
-                        background.submit(new InvalidProtocol(output, "message must contain command key"));
+                    // Peer has closed the connection and EOF received
+                    if (in == null) {
+                        log.info("peer is disconnected");
                         close();
                         return;
                     }
-
+                    Document doc = Document.parse(in);
                     String command = doc.getString("command");
 
-                    // Invalid protocol received so close the connection then try to reconnect at least three times
+                    //System.out.println("Received: " + command);  // Debugging async
+
+                    // Received INVALID_PROTOCOL, close the connection
                     if (command.equals(Messages.INVALID_PROTOCOL)) {
                         close();
-                        connectionObserver.retry(fileSystemManager, remoteHostPort);
                         return;
                     }
                     else if (command.equals(Messages.FILE_CREATE_REQUEST)) {
@@ -317,15 +266,27 @@ public abstract class Connection {
                         close();
                     }
                 }
+
+                // Enter here when the peer has closed the connection
+               // log.info("peer unexpectedly closed connection");
+               // close();
             }
-            // When the peer has closed the connection
-            catch (IOException e) {
-                e.printStackTrace();
-                log.info("peer has unexpectedly closed the connection");
+            catch (SocketException e) {
+                // Received a Connection Reset TCP RST so close the connection and try again
+                log.info("connection reset");
                 close();
-                // Retry connection
-                connectionObserver.retry(fileSystemManager, remoteHostPort);
+                connectionObserver.retry(Connection.this);
+            }
+            catch (IOException e) {
+                log.severe("error happened when reading input from peer: " + e.getMessage());
+                close();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                log.severe("here" + e.getMessage());
+                close();
             }
         }
     }
 }
+

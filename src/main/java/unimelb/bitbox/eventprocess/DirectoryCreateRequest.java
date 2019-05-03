@@ -4,7 +4,7 @@ import unimelb.bitbox.messages.Messages;
 
 import java.io.BufferedWriter;
 
-public class DirectoryCreateRequest extends BaseRunnable {
+public class DirectoryCreateRequest extends EventProcess {
 
     private String pathName;
 

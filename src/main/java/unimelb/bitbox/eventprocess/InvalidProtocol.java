@@ -5,7 +5,7 @@ import unimelb.bitbox.messages.Messages;
 
 import java.io.BufferedWriter;
 
-public class InvalidProtocol extends BaseRunnable {
+public class InvalidProtocol extends EventProcess {
     private InvalidProtocolType type;
     private String field;
     private String message;

@@ -12,7 +12,7 @@ import java.util.ArrayList;
  * Sends a series of messages depending on how big the file that needs to requested is and also the blockSize
  * to receive the content of the file.
  */
-public class FileBytesRequest extends BaseRunnable {
+public class FileBytesRequest extends EventProcess {
     private Document fileDescriptor;
     private String pathName;
 

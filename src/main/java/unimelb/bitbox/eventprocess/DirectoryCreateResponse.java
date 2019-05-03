@@ -6,7 +6,7 @@ import unimelb.bitbox.util.FileSystemManager;
 
 import java.io.BufferedWriter;
 
-public class DirectoryCreateResponse extends BaseRunnable {
+public class DirectoryCreateResponse extends EventProcess {
 
 
     private FileSystemManager fileSystemManager;

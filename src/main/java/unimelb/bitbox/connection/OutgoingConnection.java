@@ -1,126 +1,115 @@
 package unimelb.bitbox.connection;
 
 import unimelb.bitbox.ServerMain;
-import unimelb.bitbox.eventprocess.BaseRunnable;
+import unimelb.bitbox.eventprocess.EventProcess;
 import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.concurrent.Executors;
 
-public class OutgoingConnection extends Connection {
-    OutgoingConnection(FileSystemManager fileSystemManager, ConnectionObserver connectionObserver, HostPort remoteHostPort) {
-        super(fileSystemManager, connectionObserver);
+public class OutgoingConnection extends Connection{
+    ArrayList<HostPort> queue;
 
-        // Start the handshake
-        listener.submit(new Handshake(remoteHostPort));
+    public OutgoingConnection(FileSystemManager fileSystemManager, ConnectionObserver observer, HostPort remoteHostPort) {
+        this.queue = new ArrayList<>();
+
+        this.fileSystemManager = fileSystemManager;
+        this.connectionObserver = observer;
+        this.remoteHostPort = null;
+        this.socket = null;
+        this.isIncoming = false;
+        this.nRetries = 0;
+
+        // Add the first host port to the queue
+        queue.add(remoteHostPort);
+
+        // Initialise threads
+        this.listener = Executors.newSingleThreadExecutor();
+        this.sender = Executors.newSingleThreadExecutor();
+        this.background = Executors.newSingleThreadExecutor();
+
+        listener.submit(new Handshake());
     }
 
-    private class Handshake extends BaseRunnable {
-        private HostPort firstHostPort;
-        Handshake(HostPort firstHostPort) {
-            super(null);
-
-            this.firstHostPort = firstHostPort;
-
-        }
+    private class Handshake extends EventProcess {
 
         @Override
         public void run() {
-            // Start a queue to add peers to use bfs to connect to peers if received a CONNECTION_REFUSED
-            // message
-            LinkedList<HostPort> queue = new LinkedList<>();
-            queue.add(firstHostPort);
-
-            // While the queue is not empty, get the peers one by one and connect to them until
-            // a successful connection is established
+            // Create a new socket for the connection
             while (!queue.isEmpty()) {
-                remoteHostPort = queue.removeFirst();
+                log.info("attempting to start connection");
+                remoteHostPort = queue.remove(0);
 
-                // Create a new socket for the current peer if failed, just exit
+                // Create a socket for this peer
                 try {
                     socket = new Socket(remoteHostPort.host, remoteHostPort.port);
-                } catch (Exception e) {
-                    log.info("error creating socket. could not connect to peer " + remoteHostPort.toString());
+                } catch (IOException e) {
+                    log.info("unable to connect to the peer");
                     close();
                     return;
                 }
 
-                // Create reader and writer for the connection and update the output
-                createWriterAndReader();
-                updateOutput(output);
+                // Initialise the output and input
+                initInputOutput();
+                updateWriter(output);
 
-                // Initiate a HANDSHAKE_REQUEST to the peer
+
+                // Send a HANDSHAKE_REQUEST
                 sendMessage(Messages.genHandshakeRequest(ServerMain.localHostPort));
 
-                // Now wait for a response
+                // Wait for response
                 try {
-                    String res = input.readLine();
+                    Document doc = Document.parse(input.readLine());
+                    String command = doc.getString("command");
 
-                    //System.out.println("Received: " + res);
-
-                    Document resDoc = Document.parse(res);
-                    String command = resDoc.getString("command");
-
-                    // HANDSHAKE_RESPONSE
+                    // HANDSHAKE_RESPONSE, connection approved!
                     if (command.equals(Messages.HANDSHAKE_RESPONSE)) {
-                        // Connection successful! Submit a listener to the thread, sync peers and return
-                        listener.submit(new Listener());
-                        initSyncPeers();
-                        log.info("successfully connected to " + remoteHostPort);
+                        syncEvents();
+                        listener.submit(new Listen());
+
+                        log.info("successfully connected to peer " + remoteHostPort);
                         return;
                     }
-                    // CONNECTION_REFUSED
+                    // CONNECTION_REFUSED, add to queue and continue looking for peers
                     else if (command.equals(Messages.CONNECTION_REFUSED)) {
-                        // Connection refused :( Time to look for a new connection
-                        // Get the peers
-                        // Check if the peers received is a correct JSON list, otherwise send an INVALID_PROTOCOL
-                        Object o = resDoc.get("peers");
+                        // Get the list of peers
+                        Object o = doc.get("peers");
                         if (o instanceof ArrayList) {
-                            // Close everything
-                            try {
-                                socket.close();
-                                socket = null;
-                                input.close();
-                                input = null;
-                                output.close();
-                                output = null;
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                            ArrayList<Document> peerDocs = (ArrayList) o;
 
-                            // Append to the queue
-                            ArrayList<Document> peersDocs = (ArrayList)o;
-                            for (Document peerDoc : peersDocs) {
+                            for (Document peerDoc : peerDocs) {
                                 queue.add(new HostPort(peerDoc));
                             }
 
+                            // Need to close the current socket and input and output
+                            socket.close();
+                            input.close();
+                            output.close();
                         } else {
-                            // Send invalid protocol and try to connect to the next peer
-                            sendMessage(Messages.genInvalidProtocol("peers should be a list"));
+                            // Send INVALID_PROTOCOL
+                            sendMessage(Messages.genInvalidProtocol("cannot access peers list"));
                             close();
+                            return;
                         }
                     }
-                    // Anything else so send an INVALID_PROTOCOL
+                    // Send an INVALID_PROTOCOL
                     else {
-                        sendMessage(Messages.genInvalidProtocol("expecting HANDSHAKE_RESPONSE or CONNECTION_REFUSED"));
+                        sendMessage(Messages.genInvalidProtocol("invalid command received"));
                         close();
                         return;
                     }
                 } catch (IOException e) {
-                    log.severe("error happened when waiting for peer to respond to HANDSHAKE_REQUEST");
-                    // Close the connection
+                    log.severe("error reading from peer");
                     close();
+                    return;
                 }
             }
-
-            // Reached here if unable to connect to all the peers
-            log.info("couldn't connect to any peer, all peers may be offline or in an error state");
-            close();
         }
     }
 }

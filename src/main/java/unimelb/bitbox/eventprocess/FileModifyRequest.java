@@ -4,11 +4,10 @@ import java.io.BufferedWriter;
 
 
 import unimelb.bitbox.messages.Messages;
-import unimelb.bitbox.eventprocess.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 
-public class FileModifyRequest extends BaseRunnable {
+public class FileModifyRequest extends EventProcess {
 	private FileSystemManager.FileSystemEvent fileSystemEvent;
 	
 	public FileModifyRequest (BufferedWriter output, FileSystemManager.FileSystemEvent fileSystemEvent) {

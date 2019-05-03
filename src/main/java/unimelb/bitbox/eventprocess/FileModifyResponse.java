@@ -1,7 +1,6 @@
 package unimelb.bitbox.eventprocess;
 
 import unimelb.bitbox.messages.Messages;
-import unimelb.bitbox.eventprocess.BaseRunnable;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 
@@ -11,7 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 
-public class FileModifyResponse extends BaseRunnable {
+public class FileModifyResponse extends EventProcess {
 
 	private FileSystemManager fileSystemManager;
 	private Document received;
