@@ -53,7 +53,7 @@ public class ServerMain implements FileSystemObserver {
 
 		timer = Executors.newSingleThreadScheduledExecutor();
 		long syncInterval = Long.parseLong(Configuration.getConfigurationValue("syncInterval"));
-		timer.scheduleAtFixedRate(periodicSync, 0, syncInterval, TimeUnit.SECONDS);
+		timer.scheduleAtFixedRate(periodicSync, syncInterval, syncInterval, TimeUnit.SECONDS);
 
 		// Connect to all the peers first
 		String[] peers = Configuration.getConfigurationValue("peers").split(",");
