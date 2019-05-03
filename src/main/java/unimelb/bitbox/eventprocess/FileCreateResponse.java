@@ -45,10 +45,30 @@ public class FileCreateResponse extends EventProcess
 		}
 		else if(fileSystemManager.fileNameExists(pathName)) 
 		{
-			// TODO if newer then request for bytes and delete maybe call modify file loader instead
-			doc.append("message", "pathname already exists");
-			doc.append("status", false);
-			sendMessage(doc.toJson());
+			try {
+				// Modify a file if it is already there but it last modified is older
+				if (fileSystemManager.modifyFileLoader(pathName, fileDescriptor.getString("md5"), fileDescriptor.getLong("lastModified"))) {
+					doc.append("message", "file loader ready");
+					doc.append("status", true);
+					sendMessage(doc.toJson());
+
+					ArrayList<String> messages = Messages.genFileBytesRequests(fileDescriptor, pathName);
+
+					for (String message : messages) {
+						sendMessage(message);
+					}
+				}
+				// Else dont send
+				else {
+					doc.append("message", "pathname already exists");
+					doc.append("status", false);
+					sendMessage(doc.toJson());
+				}
+			} catch (IOException e) {
+				doc.append("message", e.getMessage());
+				doc.append("status", false);
+				sendMessage(doc.toJson());
+			}
 		}
 		else
 		{
