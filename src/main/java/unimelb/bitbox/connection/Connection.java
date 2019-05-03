@@ -20,8 +20,6 @@ import static unimelb.bitbox.util.FileSystemManager.EVENT.FILE_CREATE;
 public abstract class Connection {
     static Logger log = Logger.getLogger(Connection.class.getName());
 
-    private final int MAX_RETRIES = 3;
-
     FileSystemManager fileSystemManager;
     boolean isIncoming;
     int nRetries;
@@ -283,7 +281,7 @@ public abstract class Connection {
             }
             catch (Exception e) {
                 e.printStackTrace();
-                log.severe("here" + e.getMessage());
+                log.severe("big exception:" + e.getMessage());
                 close();
             }
         }

@@ -72,16 +72,16 @@ public class FileCreateResponse extends EventProcess
 		}
 		else
 		{
-			try {
-				fileSystemManager.cancelFileLoader(pathName);
-
-			} catch (IOException e) {
-				System.out.println("Error with accessing file system");
-				doc.append("message", "error accessing file system. could not create file");
-				doc.append("status", false);
-				e.printStackTrace();
-				return;
-			}
+//			try {
+//				fileSystemManager.cancelFileLoader(pathName);
+//
+//			} catch (IOException e) {
+//				System.out.println("Error with accessing file system");
+//				doc.append("message", "error accessing file system. could not create file");
+//				doc.append("status", false);
+//				e.printStackTrace();
+//				return;
+//			}
 			try {
 				if(fileSystemManager.createFileLoader(pathName,
 						fileDescriptor.getString("md5"),fileDescriptor.getLong("fileSize"),
