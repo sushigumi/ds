@@ -3,7 +3,9 @@
  */
 package unimelb.bitbox.eventprocess;
 import java.io.BufferedWriter;
+import java.net.DatagramSocket;
 
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager.FileSystemEvent;
@@ -19,11 +21,15 @@ public class FileCreateRequest extends EventProcess
 	
 	public FileCreateRequest(BufferedWriter output, FileSystemEvent fileSystemEvent)
 	{
-		super(output);
+		super(output, ServerMain.MODE_TCP);
 		this.fileSystemEvent = fileSystemEvent;
 	}
 
-
+	public FileCreateRequest(DatagramSocket socket, FileSystemEvent fileSystemEvent)
+	{
+		super(socket, ServerMain.MODE_UDP);
+		this.fileSystemEvent = fileSystemEvent;
+	}
 
 	@Override
 	public void run() 

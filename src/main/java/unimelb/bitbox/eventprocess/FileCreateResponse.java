@@ -1,9 +1,11 @@
 package unimelb.bitbox.eventprocess;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
@@ -20,7 +22,14 @@ public class FileCreateResponse extends EventProcess
 	
 	public FileCreateResponse(BufferedWriter output, Document received, FileSystemManager fileSystemManager)
 	{
-		super(output);
+		super(output, ServerMain.MODE_TCP);
+		this.received = received;
+		this.fileSystemManager = fileSystemManager;
+	}
+
+	public FileCreateResponse(DatagramSocket socket, Document received, FileSystemManager fileSystemManager)
+	{
+		super(socket, ServerMain.MODE_UDP);
 		this.received = received;
 		this.fileSystemManager = fileSystemManager;
 	}
