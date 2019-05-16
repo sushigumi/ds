@@ -16,7 +16,7 @@ public class DirectoryCreateResponse extends EventProcess {
 
     public DirectoryCreateResponse(BufferedWriter output, FileSystemManager fileSystemManager,
                                    Document request) {
-        super(output, ServerMain.MODE_TCP);
+        super(output);
         this.fileSystemManager = fileSystemManager;
         this.request = request;
 
@@ -24,7 +24,7 @@ public class DirectoryCreateResponse extends EventProcess {
 
     public DirectoryCreateResponse(DatagramSocket socket, FileSystemManager fileSystemManager,
                                    Document request) {
-        super(socket, ServerMain.MODE_UDP);
+        super(socket);
         this.fileSystemManager = fileSystemManager;
         this.request = request;
 

@@ -21,13 +21,13 @@ public class FileCreateRequest extends EventProcess
 	
 	public FileCreateRequest(BufferedWriter output, FileSystemEvent fileSystemEvent)
 	{
-		super(output, ServerMain.MODE_TCP);
+		super(output);
 		this.fileSystemEvent = fileSystemEvent;
 	}
 
 	public FileCreateRequest(DatagramSocket socket, FileSystemEvent fileSystemEvent)
 	{
-		super(socket, ServerMain.MODE_UDP);
+		super(socket);
 		this.fileSystemEvent = fileSystemEvent;
 	}
 

@@ -15,14 +15,14 @@ public class DirectoryDeleteResponse extends EventProcess {
 
     public DirectoryDeleteResponse(BufferedWriter output, FileSystemManager fileSystemManager,
                                    Document request) {
-        super(output, ServerMain.MODE_TCP);
+        super(output);
         this.fileSystemManager = fileSystemManager;
         this.request = request;
     }
 
     public DirectoryDeleteResponse(DatagramSocket socket, FileSystemManager fileSystemManager,
                                    Document request) {
-        super(socket, ServerMain.MODE_UDP);
+        super(socket);
         this.fileSystemManager = fileSystemManager;
         this.request = request;
     }

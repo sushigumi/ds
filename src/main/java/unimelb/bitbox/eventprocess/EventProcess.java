@@ -5,6 +5,7 @@ import unimelb.bitbox.util.Document;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.logging.Logger;
 
@@ -12,16 +13,16 @@ public abstract class EventProcess implements Runnable {
     static Logger log = Logger.getLogger(EventProcess.class.getName());
 
     private String mode;
-    private BufferedWriter writer;
-    private DatagramSocket datagramSocket;
+    private BufferedWriter writer = null;
+    private DatagramSocket datagramSocket = null;
 
-    public EventProcess(BufferedWriter writer, String mode) {
-        this.mode = mode;
+    public EventProcess(BufferedWriter writer) {
+        this.mode = ServerMain.MODE_TCP;
         this.writer = writer;
     }
 
-    public EventProcess(DatagramSocket socket, String mode) {
-        this.mode = mode;
+    public EventProcess(DatagramSocket socket) {
+        this.mode = ServerMain.MODE_UDP;
         this.datagramSocket = socket;
     }
 
@@ -42,7 +43,8 @@ public abstract class EventProcess implements Runnable {
                 writer.flush();
             } else if (mode.equals(ServerMain.MODE_UDP)) {
                 // Convert the message to a bytes buffer before sending to the other peer
-
+                DatagramPacket
+                datagramSocket.send();
             }
 
         } catch (IOException e) {

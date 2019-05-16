@@ -11,12 +11,12 @@ public class DirectoryDeleteRequest extends EventProcess {
     private String pathName;
 
     public DirectoryDeleteRequest(BufferedWriter output, String pathName) {
-        super(output, ServerMain.MODE_TCP);
+        super(output);
         this.pathName = pathName;
     }
 
     public DirectoryDeleteRequest(DatagramSocket socket, String pathName) {
-        super(socket, ServerMain.MODE_UDP);
+        super(socket);
         this.pathName = pathName;
     }
 

@@ -19,13 +19,13 @@ public class FileBytesRequest extends EventProcess {
     private String pathName;
 
     public FileBytesRequest(BufferedWriter output, Document fileDescriptor, String pathName) {
-        super(output, ServerMain.MODE_TCP);
+        super(output);
         this.fileDescriptor = fileDescriptor;
         this.pathName = pathName;
     }
 
     public FileBytesRequest(DatagramSocket socket, Document fileDescriptor, String pathName) {
-        super(socket, ServerMain.MODE_UDP);
+        super(socket);
         this.fileDescriptor = fileDescriptor;
         this.pathName = pathName;
     }
