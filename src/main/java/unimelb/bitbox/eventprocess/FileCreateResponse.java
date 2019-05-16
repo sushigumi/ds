@@ -22,14 +22,14 @@ public class FileCreateResponse extends EventProcess
 	
 	public FileCreateResponse(BufferedWriter output, Document received, FileSystemManager fileSystemManager)
 	{
-		super(output, ServerMain.MODE_TCP);
+		super(output);
 		this.received = received;
 		this.fileSystemManager = fileSystemManager;
 	}
 
 	public FileCreateResponse(DatagramSocket socket, Document received, FileSystemManager fileSystemManager)
 	{
-		super(socket, ServerMain.MODE_UDP);
+		super(socket);
 		this.received = received;
 		this.fileSystemManager = fileSystemManager;
 	}

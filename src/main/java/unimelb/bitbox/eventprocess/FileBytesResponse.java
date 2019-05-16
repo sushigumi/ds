@@ -15,14 +15,14 @@ public class FileBytesResponse extends EventProcess {
 
     public FileBytesResponse(BufferedWriter output, FileSystemManager fileSystemManager,
                              Document fileBytesRequest) {
-        super(output, ServerMain.MODE_TCP);
+        super(output);
         this.fileSystemManager = fileSystemManager;
         this.fileBytesRequest = fileBytesRequest;
     }
 
     public FileBytesResponse(DatagramSocket socket, FileSystemManager fileSystemManager,
                              Document fileBytesRequest) {
-        super(socket, ServerMain.MODE_UDP);
+        super(socket);
         this.fileSystemManager = fileSystemManager;
         this.fileBytesRequest = fileBytesRequest;
     }

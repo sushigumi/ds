@@ -11,12 +11,12 @@ public class DirectoryCreateRequest extends EventProcess {
     private String pathName;
 
     public DirectoryCreateRequest(BufferedWriter output, String pathName) {
-        super(output, ServerMain.MODE_TCP);
+        super(output);
         this.pathName = pathName;
     }
 
     public DirectoryCreateRequest(DatagramSocket datagramSocket, String pathName) {
-        super(datagramSocket, ServerMain.MODE_UDP);
+        super(datagramSocket);
         this.pathName = pathName;
     }
 

@@ -13,12 +13,12 @@ public class InvalidProtocol extends EventProcess {
     private String message;
 
     public InvalidProtocol(BufferedWriter output, InvalidProtocolType type) {
-        super(output, ServerMain.MODE_TCP);
+        super(output);
         this.type = type;
     }
 
     public InvalidProtocol(DatagramSocket socket, InvalidProtocolType type) {
-        super(socket, ServerMain.MODE_UDP);
+        super(socket);
         this.type = type;
     }
 
@@ -29,13 +29,13 @@ public class InvalidProtocol extends EventProcess {
      * @param field
      */
     public InvalidProtocol(BufferedWriter output, InvalidProtocolType type, String field) {
-        super(output, ServerMain.MODE_TCP);
+        super(output);
         this.type = type;
         this.field = field;
     }
 
     public InvalidProtocol(BufferedWriter output, String message) {
-        super(output, ServerMain.MODE_TCP);
+        super(output);
         type = InvalidProtocolType.CUSTOM;
         this.message = message;
     }

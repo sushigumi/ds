@@ -18,13 +18,13 @@ public class FileModifyResponse extends EventProcess {
 	private Document received;
 
 	public FileModifyResponse(BufferedWriter output, Document received, FileSystemManager fileSystemManager) {
-		super(output, ServerMain.MODE_TCP);
+		super(output);
 		this.received = received;
 		this.fileSystemManager = fileSystemManager;
 	}
 
 	public FileModifyResponse(DatagramSocket socket, Document received, FileSystemManager fileSystemManager) {
-		super(socket, ServerMain.MODE_UDP);
+		super(socket);
 		this.received = received;
 		this.fileSystemManager = fileSystemManager;
 	}

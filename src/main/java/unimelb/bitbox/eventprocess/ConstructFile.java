@@ -23,14 +23,14 @@ public class ConstructFile extends EventProcess {
 
     public ConstructFile(BufferedWriter output, FileSystemManager fileSystemManager,
                          Document fileBytesResponse) {
-        super(output, ServerMain.MODE_TCP);
+        super(output);
         this.fileSystemManager = fileSystemManager;
         this.fileBytesResponse = fileBytesResponse;
     }
 
     public ConstructFile(DatagramSocket datagramSocket, FileSystemManager fileSystemManager,
                          Document fileBytesResponse) {
-        super(datagramSocket, ServerMain.MODE_UDP);
+        super(datagramSocket);
         this.fileSystemManager = fileSystemManager;
         this.fileBytesResponse = fileBytesResponse;
     }

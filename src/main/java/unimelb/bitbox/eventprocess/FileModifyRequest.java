@@ -13,12 +13,12 @@ public class FileModifyRequest extends EventProcess {
 	private FileSystemManager.FileSystemEvent fileSystemEvent;
 	
 	public FileModifyRequest (BufferedWriter output, FileSystemManager.FileSystemEvent fileSystemEvent) {
-		super(output, ServerMain.MODE_TCP);
+		super(output);
 		this.fileSystemEvent=fileSystemEvent;
 	}
 
 	public FileModifyRequest (DatagramSocket socket, FileSystemManager.FileSystemEvent fileSystemEvent) {
-		super(socket, ServerMain.MODE_UDP);
+		super(socket);
 		this.fileSystemEvent=fileSystemEvent;
 	}
 
