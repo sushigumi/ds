@@ -60,7 +60,7 @@ public class OutgoingConnection extends Connection{
 
 
                 // Send a HANDSHAKE_REQUEST
-                sendMessage(Messages.genHandshakeRequest(ServerMain.localHostPort));
+                sendMessage(Messages.genHandshakeRequest(ServerMain.getLocalHostPort()));
 
                 // Wait for response
                 try {
