@@ -25,13 +25,22 @@ public class UDPPeerManager {
     }
 
     /**
-     * Add a peer to the connections. If there are too many connections, a CONNECTION_REFUSED message is sent back
-     * and then the connection is removed from the list of remembered peers.
+     * Add a peer to the connections. Called for an outgoing connection
      * @param serverSocket
      * @param remoteHostPortString
      */
-    public void addPeer(DatagramSocket serverSocket, String remoteHostPortString) {
-        rememberedPeers.add(new UDPClient(serverSocket, new HostPort(remoteHostPortString)));
+    public void addPeer(DatagramSocket serverSocket, String remoteHostPortString, FileSystemManager fileSystemManager) {
+        rememberedPeers.add(new UDPClient(fileSystemManager, serverSocket, new HostPort(remoteHostPortString), false));
+        nRememberedPeers++;
+    }
+
+    /**
+     * Add a peer to the connections, Called for an incoming connection
+     * @param serverSocket
+     * @param remoteHostPort
+     */
+    public void addPeer(DatagramSocket serverSocket, HostPort remoteHostPort, FileSystemManager fileSystemManager) {
+        rememberedPeers.add(new UDPClient(fileSystemManager, serverSocket, remoteHostPort, true));
         nRememberedPeers++;
     }
 
@@ -55,6 +64,21 @@ public class UDPPeerManager {
     }
 
     /**
+     * Get the host ports of the remembered peers
+     * @return
+     */
+    public ArrayList<HostPort> getConnectedPeers() {
+        ArrayList<HostPort> hostPorts = new ArrayList<>();
+        for (UDPClient peer : rememberedPeers) {
+            if (peer.getRemoteHostPort() != null) {
+                hostPorts.add(peer.getRemoteHostPort());
+            }
+        }
+
+        return hostPorts;
+    }
+
+    /**
      * Process a file system event and send it to all the peers
      * @param fileSystemEvent
      */
@@ -70,5 +94,60 @@ public class UDPPeerManager {
      */
     public boolean isAvailableConnections() {
         return nRememberedPeers <= MAXIMUM_PEERS;
+    }
+
+    /**
+     * Called when the server receives a CONNECTION_REFUSED message and the appropriate client needs to search for
+     * another peer to connect to
+     * @param remoteHostPort
+     * @param otherPeers
+     */
+    public void onConnectionRefused(HostPort remoteHostPort, ArrayList<HostPort> otherPeers) {
+        UDPClient toRetry = null;
+        // Search for the peer
+        for (UDPClient peer : rememberedPeers) {
+            if (peer.getRemoteHostPort().equals(remoteHostPort)) {
+                toRetry = peer;
+                break;
+            }
+        }
+
+        // If the peer exists, then retry
+        if (toRetry != null) {
+            toRetry.tryOtherPeer(otherPeers);
+        }
+    }
+
+    /**
+     * Get the state of the appropriate Peer
+     * @param remoteHostPort
+     * @return
+     */
+    public UDPClient.STATE getStateOfPeer(HostPort remoteHostPort) {
+        for (UDPClient peer : rememberedPeers) {
+            if (peer.getRemoteHostPort().equals(remoteHostPort)) {
+                return peer.getState();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Set the state of the selected peer
+     * @param remoteHostPort
+     */
+    public void setStateOfPeer(HostPort remoteHostPort, UDPClient.STATE state) {
+        for (UDPClient peer : rememberedPeers) {
+            if (peer.getRemoteHostPort().equals(remoteHostPort)) {
+                peer.setState(state);
+
+                // If just became OK then we need to sync events
+                if (state == UDPClient.STATE.OK) {
+                    peer.syncEvents();
+                }
+                return;
+            }
+        }
     }
 }
