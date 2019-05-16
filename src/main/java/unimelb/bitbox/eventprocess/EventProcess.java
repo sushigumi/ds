@@ -7,6 +7,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.logging.Logger;
 
 public abstract class EventProcess implements Runnable {
@@ -15,15 +16,17 @@ public abstract class EventProcess implements Runnable {
     private String mode;
     private BufferedWriter writer = null;
     private DatagramSocket datagramSocket = null;
+    private InetAddress address = null;
 
     public EventProcess(BufferedWriter writer) {
         this.mode = ServerMain.MODE_TCP;
         this.writer = writer;
     }
 
-    public EventProcess(DatagramSocket socket) {
+    public EventProcess(DatagramSocket socket, InetAddress address) {
         this.mode = ServerMain.MODE_UDP;
         this.datagramSocket = socket;
+        this.address = address;
     }
 
     public EventProcess() {

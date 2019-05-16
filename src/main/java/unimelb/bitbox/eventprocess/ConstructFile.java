@@ -8,6 +8,7 @@ import unimelb.bitbox.util.FileSystemManager;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -28,9 +29,9 @@ public class ConstructFile extends EventProcess {
         this.fileBytesResponse = fileBytesResponse;
     }
 
-    public ConstructFile(DatagramSocket datagramSocket, FileSystemManager fileSystemManager,
-                         Document fileBytesResponse) {
-        super(datagramSocket);
+    public ConstructFile(DatagramSocket datagramSocket, InetAddress address,
+                         FileSystemManager fileSystemManager, Document fileBytesResponse) {
+        super(datagramSocket, address);
         this.fileSystemManager = fileSystemManager;
         this.fileBytesResponse = fileBytesResponse;
     }

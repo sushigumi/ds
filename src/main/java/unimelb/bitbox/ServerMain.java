@@ -144,6 +144,8 @@ public class ServerMain implements FileSystemObserver {
 
 					// Get the message from the packet in UTF-8 format
 					String message = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
+					System.out.println(packet.getAddress());
+					System.out.println(packet.getSocketAddress());
 					System.out.println(message);
 				}
 				// Caught exception so exit and log to user
