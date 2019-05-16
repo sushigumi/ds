@@ -1,6 +1,8 @@
 package unimelb.bitbox.peer;
 
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.eventprocess.*;
+import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
@@ -8,6 +10,7 @@ import java.net.DatagramSocket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+//TODO add retry mechanism
 public class UDPClient {
     private ExecutorService sender;
 
@@ -18,6 +21,23 @@ public class UDPClient {
         this.serverSocket = serverSocket;
         this.remoteHostPort = remoteHostPort;
         sender = Executors.newSingleThreadExecutor();
+
+        // Start the handshake process
+        connect();
+    }
+
+    /**
+     * Start a handshake, sends a HANDSHAKE_REQUEST to the specified peer to request for a connection. If the connection
+     * is refused, then tries to connect with all the others returned from the CONNECTION_REFUSED message.
+     */
+    private void connect() {
+        // Send a HANDSHAKE_REQUEST to the peer
+        sender.submit(new Handshake(serverSocket, remoteHostPort));
+    }
+
+    // TODO disconnect
+    private void disconnect() {
+
     }
 
     public void processFileSystemEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
@@ -41,6 +61,28 @@ public class UDPClient {
             case DIRECTORY_DELETE:
                 sender.submit(new DirectoryDeleteRequest(serverSocket, remoteHostPort, fileSystemEvent.pathName));
                 break;
+        }
+    }
+
+    /**
+     * Get the host port of the client
+     * @return
+     */
+    public HostPort getRemoteHostPort() {
+        return remoteHostPort;
+    }
+
+    /**
+     * Send a handshake request to the peer
+     */
+    private class Handshake extends EventProcess {
+        public Handshake(DatagramSocket socket, HostPort hostPort) {
+            super(socket, hostPort);
+        }
+
+        @Override
+        public void run() {
+            sendMessage(Messages.genHandshakeRequest(ServerMain.getLocalHostPort()));
         }
     }
 }

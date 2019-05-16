@@ -46,7 +46,7 @@ public class IncomingConnection extends Connection {
                     // If there are still available connections then send HANDSHAKE_RESPONSE
                     if (TCPPeerManager.getInstance().isAvailableConnections()) {
                         remoteHostPort = new HostPort((Document)doc.get("hostPort"));
-                        sendMessage(Messages.genHandshakeResponse(ServerMain.localHostPort));
+                        sendMessage(Messages.genHandshakeResponse(ServerMain.getLocalHostPort()));
 
                         syncEvents();
 

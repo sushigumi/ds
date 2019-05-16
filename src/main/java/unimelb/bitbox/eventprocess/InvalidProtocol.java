@@ -37,6 +37,12 @@ public class InvalidProtocol extends EventProcess {
         this.field = field;
     }
 
+    public InvalidProtocol(DatagramSocket socket, HostPort hostPort, InvalidProtocolType type, String field) {
+        super(socket, hostPort);
+        this.type = type;
+        this.field = field;
+    }
+
     public InvalidProtocol(BufferedWriter output, String message) {
         super(output);
         type = InvalidProtocolType.CUSTOM;
