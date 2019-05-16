@@ -4,9 +4,11 @@ import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
+import unimelb.bitbox.util.HostPort;
 
 import java.io.BufferedWriter;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 public class FileBytesResponse extends EventProcess {
     private FileSystemManager fileSystemManager;
@@ -20,9 +22,9 @@ public class FileBytesResponse extends EventProcess {
         this.fileBytesRequest = fileBytesRequest;
     }
 
-    public FileBytesResponse(DatagramSocket socket, FileSystemManager fileSystemManager,
+    public FileBytesResponse(DatagramSocket socket, HostPort hostPort, FileSystemManager fileSystemManager,
                              Document fileBytesRequest) {
-        super(socket);
+        super(socket, hostPort);
         this.fileSystemManager = fileSystemManager;
         this.fileBytesRequest = fileBytesRequest;
     }

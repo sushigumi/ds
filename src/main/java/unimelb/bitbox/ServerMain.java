@@ -117,6 +117,8 @@ public class ServerMain implements FileSystemObserver {
 		private DatagramSocket socket;
 		private int blockSize;
 
+		private ExecutorService backgroundExecutor;
+
 		UDPServerThread() throws IOException {
 			super("UDPServer");
 
@@ -126,6 +128,9 @@ public class ServerMain implements FileSystemObserver {
 
 			// Get the blocksize of datagram packet
 			blockSize = Integer.parseInt(Configuration.getConfigurationValue("blockSize"));
+
+			// Set up a background thread to handle whatever incoming request received
+			this.backgroundExecutor = Executors.newSingleThreadExecutor();
 		}
 
 		/**
@@ -133,6 +138,9 @@ public class ServerMain implements FileSystemObserver {
 		 */
 		@Override
 		public void run() {
+			// Send a HANDSHAKE_REQUEST to all the peers in the configuration file
+			
+
 			while (true) {
 				try {
 					// Create a new buffer to accept requests

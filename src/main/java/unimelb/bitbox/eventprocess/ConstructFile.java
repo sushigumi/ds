@@ -4,6 +4,7 @@ import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
+import unimelb.bitbox.util.HostPort;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -29,9 +30,9 @@ public class ConstructFile extends EventProcess {
         this.fileBytesResponse = fileBytesResponse;
     }
 
-    public ConstructFile(DatagramSocket datagramSocket, InetAddress address,
+    public ConstructFile(DatagramSocket datagramSocket, HostPort hostPort,
                          FileSystemManager fileSystemManager, Document fileBytesResponse) {
-        super(datagramSocket, address);
+        super(datagramSocket, hostPort);
         this.fileSystemManager = fileSystemManager;
         this.fileBytesResponse = fileBytesResponse;
     }

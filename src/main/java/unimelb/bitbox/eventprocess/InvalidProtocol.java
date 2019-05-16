@@ -3,9 +3,11 @@ package unimelb.bitbox.eventprocess;
 import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.InvalidProtocolType;
 import unimelb.bitbox.messages.Messages;
+import unimelb.bitbox.util.HostPort;
 
 import java.io.BufferedWriter;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 public class InvalidProtocol extends EventProcess {
     private InvalidProtocolType type;
@@ -17,8 +19,9 @@ public class InvalidProtocol extends EventProcess {
         this.type = type;
     }
 
-    public InvalidProtocol(DatagramSocket socket, InvalidProtocolType type) {
-        super(socket);
+    public InvalidProtocol(DatagramSocket socket, HostPort hostPort,
+                           InvalidProtocolType type) {
+        super(socket, hostPort);
         this.type = type;
     }
 

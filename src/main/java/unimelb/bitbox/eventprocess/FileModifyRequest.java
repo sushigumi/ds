@@ -2,12 +2,14 @@ package unimelb.bitbox.eventprocess;
 
 import java.io.BufferedWriter;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 
 import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
+import unimelb.bitbox.util.HostPort;
 
 public class FileModifyRequest extends EventProcess {
 	private FileSystemManager.FileSystemEvent fileSystemEvent;
@@ -17,8 +19,9 @@ public class FileModifyRequest extends EventProcess {
 		this.fileSystemEvent=fileSystemEvent;
 	}
 
-	public FileModifyRequest (DatagramSocket socket, FileSystemManager.FileSystemEvent fileSystemEvent) {
-		super(socket);
+	public FileModifyRequest (DatagramSocket socket, HostPort hostPort,
+							  FileSystemManager.FileSystemEvent fileSystemEvent) {
+		super(socket, hostPort);
 		this.fileSystemEvent=fileSystemEvent;
 	}
 

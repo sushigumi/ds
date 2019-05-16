@@ -2,9 +2,11 @@ package unimelb.bitbox.eventprocess;
 
 import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
+import unimelb.bitbox.util.HostPort;
 
 import java.io.BufferedWriter;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 public class DirectoryCreateRequest extends EventProcess {
 
@@ -15,8 +17,8 @@ public class DirectoryCreateRequest extends EventProcess {
         this.pathName = pathName;
     }
 
-    public DirectoryCreateRequest(DatagramSocket datagramSocket, String pathName) {
-        super(datagramSocket);
+    public DirectoryCreateRequest(DatagramSocket datagramSocket, HostPort hostPort, String pathName) {
+        super(datagramSocket, hostPort);
         this.pathName = pathName;
     }
 
