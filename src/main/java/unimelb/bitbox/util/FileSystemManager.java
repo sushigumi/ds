@@ -588,7 +588,7 @@ public class FileSystemManager extends Thread {
 	// synchronization
 	
 	/**
-	 * Typically called at the beginning of a connection, in order to ensure that
+	 * Typically called at the beginning of a peer, in order to ensure that
 	 * the remote directory has all of the same contents as the local directory.
 	 * @return A list of file system events that create the entire contents of the
 	 * share directory.

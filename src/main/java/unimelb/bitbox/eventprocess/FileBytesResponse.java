@@ -1,10 +1,12 @@
 package unimelb.bitbox.eventprocess;
 
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 
 import java.io.BufferedWriter;
+import java.net.DatagramSocket;
 
 public class FileBytesResponse extends EventProcess {
     private FileSystemManager fileSystemManager;
@@ -13,7 +15,14 @@ public class FileBytesResponse extends EventProcess {
 
     public FileBytesResponse(BufferedWriter output, FileSystemManager fileSystemManager,
                              Document fileBytesRequest) {
-        super(output);
+        super(output, ServerMain.MODE_TCP);
+        this.fileSystemManager = fileSystemManager;
+        this.fileBytesRequest = fileBytesRequest;
+    }
+
+    public FileBytesResponse(DatagramSocket socket, FileSystemManager fileSystemManager,
+                             Document fileBytesRequest) {
+        super(socket, ServerMain.MODE_UDP);
         this.fileSystemManager = fileSystemManager;
         this.fileBytesRequest = fileBytesRequest;
     }

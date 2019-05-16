@@ -1,4 +1,4 @@
-package unimelb.bitbox.connection;
+package unimelb.bitbox.peer;
 
 import unimelb.bitbox.eventprocess.*;
 import unimelb.bitbox.messages.InvalidProtocolType;
@@ -14,8 +14,6 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
-
-import static unimelb.bitbox.util.FileSystemManager.EVENT.FILE_CREATE;
 
 public abstract class Connection {
     static Logger log = Logger.getLogger(Connection.class.getName());
@@ -56,11 +54,11 @@ public abstract class Connection {
     }
 
     /**
-     * Close the current connection
+     * Close the current peer
      */
     public void close() {
         try {
-            log.info("closing the connection for peer " + remoteHostPort);
+            log.info("closing the peer for peer " + remoteHostPort);
             if (socket != null) socket.close();
             if (input != null) input.close();
             if (output != null) output.close();
@@ -71,7 +69,7 @@ public abstract class Connection {
 
             connectionObserver.closeConnection(this, isIncoming);
         } catch (IOException e) {
-            log.severe("error closing the connection " + remoteHostPort);
+            log.severe("error closing the peer " + remoteHostPort);
         }
     }
 
@@ -105,7 +103,7 @@ public abstract class Connection {
 
     /**
      * Calls generateSyncEvents() from the file system manager and sends it to the peers. Usually called at the
-     * start of a connection.
+     * start of a peer.
      */
     void syncEvents() {
         ArrayList<FileSystemManager.FileSystemEvent> events = fileSystemManager.generateSyncEvents();
@@ -126,7 +124,7 @@ public abstract class Connection {
                 while (true) {
                     String in = input.readLine();
 
-                    // Peer has closed the connection and EOF received
+                    // Peer has closed the peer and EOF received
                     if (in == null) {
                         log.info("peer is disconnected");
                         close();
@@ -137,7 +135,7 @@ public abstract class Connection {
 
                     //System.out.println("Received: " + command);  // Debugging async
 
-                    // Received INVALID_PROTOCOL, close the connection
+                    // Received INVALID_PROTOCOL, close the peer
                     if (command.equals(Messages.INVALID_PROTOCOL)) {
                         close();
                         return;
@@ -265,13 +263,13 @@ public abstract class Connection {
                     }
                 }
 
-                // Enter here when the peer has closed the connection
-               // log.info("peer unexpectedly closed connection");
+                // Enter here when the peer has closed the peer
+               // log.info("peer unexpectedly closed peer");
                // close();
             }
             catch (SocketException e) {
-                // Received a Connection Reset TCP RST so close the connection and try again
-                log.info("connection reset");
+                // Received a Connection Reset TCP RST so close the peer and try again
+                log.info("peer reset");
                 close();
                 connectionObserver.retry(Connection.this);
             }
