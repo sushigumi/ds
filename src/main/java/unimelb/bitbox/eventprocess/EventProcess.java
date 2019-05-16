@@ -1,7 +1,7 @@
 package unimelb.bitbox.eventprocess;
 
 import unimelb.bitbox.ServerMain;
-import unimelb.bitbox.util.Document;
+import unimelb.bitbox.util.HostPort;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -15,18 +15,18 @@ public abstract class EventProcess implements Runnable {
 
     private String mode;
     private BufferedWriter writer = null;
-    private DatagramSocket datagramSocket = null;
-    private InetAddress address = null;
+    private DatagramSocket socket = null;
+    private HostPort hostPort = null;
 
     public EventProcess(BufferedWriter writer) {
         this.mode = ServerMain.MODE_TCP;
         this.writer = writer;
     }
 
-    public EventProcess(DatagramSocket socket, InetAddress address) {
+    public EventProcess(DatagramSocket socket, HostPort hostPort) {
         this.mode = ServerMain.MODE_UDP;
-        this.datagramSocket = socket;
-        this.address = address;
+        this.socket = socket;
+        this.hostPort = hostPort;
     }
 
     public EventProcess() {
@@ -46,8 +46,9 @@ public abstract class EventProcess implements Runnable {
                 writer.flush();
             } else if (mode.equals(ServerMain.MODE_UDP)) {
                 // Convert the message to a bytes buffer before sending to the other peer
-                DatagramPacket
-                datagramSocket.send();
+                byte[] buf = message.getBytes();
+                DatagramPacket packet = new DatagramPacket(buf, buf.length, InetAddress.getByName(hostPort.host), hostPort.port);
+                socket.send(packet);
             }
 
         } catch (IOException e) {
