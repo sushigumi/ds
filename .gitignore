@@ -10,3 +10,4 @@ doc/
 .settings
 config*
 share/
+/bin/

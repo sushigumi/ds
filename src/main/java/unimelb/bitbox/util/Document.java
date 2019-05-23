@@ -1,4 +1,4 @@
-package unimelb.bitbox.util;
+package main.java.unimelb.bitbox.util;
 
 import java.util.ArrayList;
 
