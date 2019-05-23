@@ -15,7 +15,7 @@ import unimelb.bitbox.messages.InvalidProtocolType;
 import unimelb.bitbox.messages.MessageValidator;
 import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.peer.TCPPeerManager;
-import unimelb.bitbox.peer.UDPClient;
+import unimelb.bitbox.peer.UDPPeer;
 import unimelb.bitbox.peer.UDPPeerManager;
 import unimelb.bitbox.util.*;
 import unimelb.bitbox.util.FileSystemManager.FileSystemEvent;
@@ -47,6 +47,7 @@ public class ServerMain implements FileSystemObserver {
 			setLocalHostPort(Integer.parseInt(Configuration.getConfigurationValue("udpPort")));
 			new UDPServerThread().start();
 		}
+
 		// Invalid configuration
 		else {
 			log.severe("invalid server mode. please recheck configuration properties");
@@ -214,7 +215,7 @@ public class ServerMain implements FileSystemObserver {
 			//System.out.println("Received: " + command);  // Debugging async
 
 			// Get the state of the peer
-			UDPClient.STATE peerState = UDPPeerManager.getInstance().getStateOfPeer(remoteHostPort);
+			UDPPeer.STATE peerState = UDPPeerManager.getInstance().getStateOfPeer(remoteHostPort);
 
 			// Received INVALID_PROTOCOL, close the peer
 			if (command.equals(Messages.INVALID_PROTOCOL)) {
@@ -234,10 +235,10 @@ public class ServerMain implements FileSystemObserver {
 			}
 
 			// Peer is in handshaking state so should only accept HANDSHAKE_RESPONSE or CONNECTION_REFUSED
-			else if (peerState == UDPClient.STATE.HANDSHAKE) {
+			else if (peerState == UDPPeer.STATE.HANDSHAKE) {
 				// Received a handshake response. This means everything went well and peer is remembered
 				if (command.equals(Messages.HANDSHAKE_RESPONSE)) {
-					UDPPeerManager.getInstance().setStateOfPeer(remoteHostPort, UDPClient.STATE.OK);
+					UDPPeerManager.getInstance().setStateOfPeer(remoteHostPort, UDPPeer.STATE.OK);
 				}
 				else if (command.equals(Messages.CONNECTION_REFUSED)) {
 					// Get the other peers list
@@ -266,7 +267,7 @@ public class ServerMain implements FileSystemObserver {
 				}
 			}
 
-			else if (peerState == UDPClient.STATE.OK) {
+			else if (peerState == UDPPeer.STATE.OK) {
 				// Received a connection request again, means the message has got lost. So we can just send a HANDSHAKE_RESPONSE
 				// since the previous message was a HANDSHAKE_RESPONSE
 				if (command.equals(Messages.HANDSHAKE_REQUEST)) {

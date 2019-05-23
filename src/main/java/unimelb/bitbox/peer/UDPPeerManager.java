@@ -10,7 +10,7 @@ import java.util.ArrayList;
 public class UDPPeerManager {
     private final int MAXIMUM_PEERS = Integer.parseInt(Configuration.getConfigurationValue("maximumIncommingConnections"));
 
-    private ArrayList<UDPClient> rememberedPeers;
+    private ArrayList<UDPPeer> rememberedPeers;
     private int nRememberedPeers;
 
     private static UDPPeerManager ourInstance = new UDPPeerManager();
@@ -30,7 +30,7 @@ public class UDPPeerManager {
      * @param remoteHostPortString
      */
     public void addPeer(DatagramSocket serverSocket, String remoteHostPortString, FileSystemManager fileSystemManager) {
-        rememberedPeers.add(new UDPClient(fileSystemManager, serverSocket, new HostPort(remoteHostPortString), false));
+        rememberedPeers.add(new UDPPeer(fileSystemManager, serverSocket, new HostPort(remoteHostPortString), false));
         nRememberedPeers++;
     }
 
@@ -40,7 +40,7 @@ public class UDPPeerManager {
      * @param remoteHostPort
      */
     public void addPeer(DatagramSocket serverSocket, HostPort remoteHostPort, FileSystemManager fileSystemManager) {
-        rememberedPeers.add(new UDPClient(fileSystemManager, serverSocket, remoteHostPort, true));
+        rememberedPeers.add(new UDPPeer(fileSystemManager, serverSocket, remoteHostPort, true));
         nRememberedPeers++;
     }
 
@@ -50,9 +50,9 @@ public class UDPPeerManager {
      * @param remoteHostPort
      */
     public void disconnectPeer(HostPort remoteHostPort) {
-        UDPClient toRemove = null;
+        UDPPeer toRemove = null;
 
-        for (UDPClient peer : rememberedPeers) {
+        for (UDPPeer peer : rememberedPeers) {
             if (peer.getRemoteHostPort().equals(remoteHostPort)) {
                 toRemove = peer;
                 break;
@@ -69,7 +69,7 @@ public class UDPPeerManager {
      */
     public ArrayList<HostPort> getConnectedPeers() {
         ArrayList<HostPort> hostPorts = new ArrayList<>();
-        for (UDPClient peer : rememberedPeers) {
+        for (UDPPeer peer : rememberedPeers) {
             if (peer.getRemoteHostPort() != null) {
                 hostPorts.add(peer.getRemoteHostPort());
             }
@@ -83,7 +83,7 @@ public class UDPPeerManager {
      * @param fileSystemEvent
      */
     public void processFileSystemEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
-        for (UDPClient peer : rememberedPeers) {
+        for (UDPPeer peer : rememberedPeers) {
             peer.processFileSystemEvent(fileSystemEvent);
         }
     }
@@ -103,9 +103,9 @@ public class UDPPeerManager {
      * @param otherPeers
      */
     public void onConnectionRefused(HostPort remoteHostPort, ArrayList<HostPort> otherPeers) {
-        UDPClient toRetry = null;
+        UDPPeer toRetry = null;
         // Search for the peer
-        for (UDPClient peer : rememberedPeers) {
+        for (UDPPeer peer : rememberedPeers) {
             if (peer.getRemoteHostPort().equals(remoteHostPort)) {
                 toRetry = peer;
                 break;
@@ -123,8 +123,8 @@ public class UDPPeerManager {
      * @param remoteHostPort
      * @return
      */
-    public UDPClient.STATE getStateOfPeer(HostPort remoteHostPort) {
-        for (UDPClient peer : rememberedPeers) {
+    public UDPPeer.STATE getStateOfPeer(HostPort remoteHostPort) {
+        for (UDPPeer peer : rememberedPeers) {
             if (peer.getRemoteHostPort().equals(remoteHostPort)) {
                 return peer.getState();
             }
@@ -137,13 +137,13 @@ public class UDPPeerManager {
      * Set the state of the selected peer
      * @param remoteHostPort
      */
-    public void setStateOfPeer(HostPort remoteHostPort, UDPClient.STATE state) {
-        for (UDPClient peer : rememberedPeers) {
+    public void setStateOfPeer(HostPort remoteHostPort, UDPPeer.STATE state) {
+        for (UDPPeer peer : rememberedPeers) {
             if (peer.getRemoteHostPort().equals(remoteHostPort)) {
                 peer.setState(state);
 
                 // If just became OK then we need to sync events
-                if (state == UDPClient.STATE.OK) {
+                if (state == UDPPeer.STATE.OK) {
                     peer.syncEvents();
                 }
                 return;

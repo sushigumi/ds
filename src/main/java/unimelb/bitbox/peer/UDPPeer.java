@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 //TODO add retry mechanism
-public class UDPClient {
+public class UDPPeer {
     public enum STATE {
         HANDSHAKE, // In the middle of a handshake process
         OK; // After handshake successful
@@ -30,7 +30,7 @@ public class UDPClient {
 
     private ArrayList<HostPort> queue;
 
-    public UDPClient(FileSystemManager fileSystemManager, DatagramSocket serverSocket, HostPort remoteHostPort, boolean isIncoming) {
+    public UDPPeer(FileSystemManager fileSystemManager, DatagramSocket serverSocket, HostPort remoteHostPort, boolean isIncoming) {
         this.serverSocket = serverSocket;
         this.remoteHostPort = null;
         this.fileSystemManager = fileSystemManager;
