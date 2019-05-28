@@ -2,6 +2,7 @@ package unimelb.bitbox.eventprocess;
 
 import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
+import unimelb.bitbox.peer.UDPPeer;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.HostPort;
 
@@ -26,8 +27,8 @@ public class FileBytesRequest extends EventProcess {
         this.pathName = pathName;
     }
 
-    public FileBytesRequest(DatagramSocket socket, HostPort hostPort, Document fileDescriptor, String pathName) {
-        super(socket, hostPort);
+    public FileBytesRequest(DatagramSocket socket, HostPort hostPort, Document fileDescriptor, String pathName, UDPPeer peer) {
+        super(socket, hostPort, peer);
         this.fileDescriptor = fileDescriptor;
         this.pathName = pathName;
     }

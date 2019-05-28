@@ -6,8 +6,11 @@ import unimelb.bitbox.util.HostPort;
 
 import java.net.DatagramSocket;
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 public class UDPPeerManager {
+    private static Logger log = Logger.getLogger(UDPPeerManager.class.getName());
+
     private final int MAXIMUM_PEERS = Integer.parseInt(Configuration.getConfigurationValue("maximumIncommingConnections"));
 
     private ArrayList<UDPPeer> rememberedPeers;
@@ -32,6 +35,8 @@ public class UDPPeerManager {
     public void addPeer(DatagramSocket serverSocket, String remoteHostPortString, FileSystemManager fileSystemManager) {
         rememberedPeers.add(new UDPPeer(fileSystemManager, serverSocket, new HostPort(remoteHostPortString), false));
         nRememberedPeers++;
+
+        log.info("adding peer " + remoteHostPortString);
     }
 
     /**
@@ -42,6 +47,7 @@ public class UDPPeerManager {
     public void addPeer(DatagramSocket serverSocket, HostPort remoteHostPort, FileSystemManager fileSystemManager) {
         rememberedPeers.add(new UDPPeer(fileSystemManager, serverSocket, remoteHostPort, true));
         nRememberedPeers++;
+        log.info("adding peer " + remoteHostPort.toString());
     }
 
     /**
@@ -61,6 +67,13 @@ public class UDPPeerManager {
 
         rememberedPeers.remove(toRemove);
         nRememberedPeers--;
+
+        // Shutdown the threads
+        if (toRemove != null) toRemove.shutdown();
+
+        log.info("disconnected peer " + remoteHostPort.toString() + " due to inactivity");
+
+        System.out.println(rememberedPeers.size());
     }
 
     /**
@@ -149,5 +162,20 @@ public class UDPPeerManager {
                 return;
             }
         }
+    }
+
+    /**
+     * Get a UDPPeer based on its remote host port
+     * @param remoteHostPort
+     * @return
+     */
+    public UDPPeer getPeer(HostPort remoteHostPort) {
+        for (UDPPeer peer : rememberedPeers) {
+            if (peer.getRemoteHostPort().equals(remoteHostPort)) {
+                return peer;
+            }
+        }
+
+        return null;
     }
 }

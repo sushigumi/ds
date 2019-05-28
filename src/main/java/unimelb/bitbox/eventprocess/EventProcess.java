@@ -1,6 +1,8 @@
 package unimelb.bitbox.eventprocess;
 
 import unimelb.bitbox.ServerMain;
+import unimelb.bitbox.peer.UDPPeer;
+import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.HostPort;
 
 import java.io.BufferedWriter;
@@ -14,9 +16,12 @@ public abstract class EventProcess implements Runnable {
     static Logger log = Logger.getLogger(EventProcess.class.getName());
 
     private String mode;
+
     private BufferedWriter writer = null;
+
     private DatagramSocket socket = null;
     private HostPort hostPort = null;
+    private UDPPeer peer = null;
 
     public EventProcess(BufferedWriter writer) {
         this.mode = ServerMain.MODE_TCP;
@@ -27,6 +32,13 @@ public abstract class EventProcess implements Runnable {
         this.mode = ServerMain.MODE_UDP;
         this.socket = socket;
         this.hostPort = hostPort;
+    }
+
+    public EventProcess(DatagramSocket socket, HostPort hostPort, UDPPeer peer) {
+        this.mode = ServerMain.MODE_UDP;
+        this.socket = socket;
+        this.hostPort = hostPort;
+        this.peer = peer;
     }
 
     public EventProcess() {
@@ -49,6 +61,11 @@ public abstract class EventProcess implements Runnable {
                 byte[] buf = message.getBytes();
                 DatagramPacket packet = new DatagramPacket(buf, buf.length, InetAddress.getByName(hostPort.host), hostPort.port);
                 socket.send(packet);
+
+                // Insert a retry only for requests sent
+                if (peer != null) {
+                    peer.queueRetry(this, Document.parse(message));
+                }
             }
 
         } catch (IOException e) {

@@ -24,7 +24,9 @@ import unimelb.bitbox.util.FileSystemManager.FileSystemEvent;
 
 public class ServerMain implements FileSystemObserver {
 	public static final String MODE_UDP = "udp";
-	public static String MODE_TCP = "tcp";
+	public static final String MODE_TCP = "tcp";
+
+	public static final int MAX_RETRIES = Integer.parseInt(Configuration.getConfigurationValue("retries"));
 
 	private String mode; // TODO could change to enum?
 

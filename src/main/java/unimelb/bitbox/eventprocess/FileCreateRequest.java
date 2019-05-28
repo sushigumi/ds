@@ -8,6 +8,7 @@ import java.net.InetAddress;
 
 import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
+import unimelb.bitbox.peer.UDPPeer;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager.FileSystemEvent;
 import unimelb.bitbox.util.HostPort;
@@ -30,6 +31,12 @@ public class FileCreateRequest extends EventProcess
 	public FileCreateRequest(DatagramSocket socket, HostPort hostPort, FileSystemEvent fileSystemEvent)
 	{
 		super(socket, hostPort);
+		this.fileSystemEvent = fileSystemEvent;
+	}
+
+	public FileCreateRequest(DatagramSocket socket, HostPort hostPort, FileSystemEvent fileSystemEvent, UDPPeer peer)
+	{
+		super(socket, hostPort, peer);
 		this.fileSystemEvent = fileSystemEvent;
 	}
 

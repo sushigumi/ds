@@ -30,11 +30,8 @@ public class UDPServerThread extends ServerThread {
 
     private DatagramSocket serverSocket;
     private int blockSize;
-    private int timeout;
 
     private ExecutorService backgroundExecutor;
-    private ScheduledExecutorService retryExecutor;
-    private final int N_RETRY_THREADS = 10;
 
     public UDPServerThread(FileSystemManager fileSystemManager) throws IOException {
         super("UDPServer", fileSystemManager);
@@ -43,21 +40,11 @@ public class UDPServerThread extends ServerThread {
         int portNumber = Integer.parseInt(Configuration.getConfigurationValue("udpPort"));
         serverSocket = new DatagramSocket(portNumber);
 
-        // Read the timeout value
-        timeout = Integer.parseInt(Configuration.getConfigurationValue("timeout"));
-
         // Get the blocksize of datagram packet
         blockSize = Integer.parseInt(Configuration.getConfigurationValue("blockSize"));
 
         // Set up a background thread to handle whatever incoming request received
         this.backgroundExecutor = Executors.newSingleThreadExecutor();
-
-        // Set up a another thread for handling retries
-        this.retryExecutor = Executors.newScheduledThreadPool(N_RETRY_THREADS);
-    }
-
-    public void queueRetry(Runnable runnable) {
-        retryExecutor.schedule(runnable, timeout, TimeUnit.SECONDS);
     }
 
     /**
@@ -118,7 +105,14 @@ public class UDPServerThread extends ServerThread {
         //System.out.println("Received: " + command);  // Debugging async
 
         // Get the state of the peer
-        UDPPeer.STATE peerState = UDPPeerManager.getInstance().getStateOfPeer(remoteHostPort);
+        UDPPeer peer = UDPPeerManager.getInstance().getPeer(remoteHostPort);
+
+        UDPPeer.STATE peerState;
+        if (peer == null) {
+            peerState = null;
+        } else {
+            peerState = peer.getState();
+        }
 
         // Received INVALID_PROTOCOL, close the peer
         if (command.equals(Messages.INVALID_PROTOCOL)) {
@@ -142,6 +136,7 @@ public class UDPServerThread extends ServerThread {
             // Received a handshake response. This means everything went well and peer is remembered
             if (command.equals(Messages.HANDSHAKE_RESPONSE)) {
                 UDPPeerManager.getInstance().setStateOfPeer(remoteHostPort, UDPPeer.STATE.OK);
+                peer.cancelRetry(doc);
             }
             else if (command.equals(Messages.CONNECTION_REFUSED)) {
                 // Get the other peers list
@@ -157,6 +152,7 @@ public class UDPServerThread extends ServerThread {
                     }
 
                     UDPPeerManager.getInstance().onConnectionRefused(remoteHostPort, otherPeers);
+                    peer.cancelRetry(doc);
                 } else {
                     // Send INVALID_PROTOCOL and close connection
                     backgroundExecutor.submit(new InvalidProtocol(serverSocket, remoteHostPort, InvalidProtocolType.CUSTOM, "invalid list of peers"));
@@ -195,6 +191,7 @@ public class UDPServerThread extends ServerThread {
                     backgroundExecutor.submit(new InvalidProtocol(serverSocket, remoteHostPort, InvalidProtocolType.MISSING_FIELD, createResponse));
                     UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
                 }
+                peer.cancelRetry(doc);
             } else if (command.equals(Messages.FILE_DELETE_REQUEST)) {
                 String deleteRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
                 if (deleteRequest != null) {
@@ -209,6 +206,7 @@ public class UDPServerThread extends ServerThread {
                     backgroundExecutor.submit(new InvalidProtocol(serverSocket, remoteHostPort, InvalidProtocolType.MISSING_FIELD, deleteResponse));
                     UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
                 }
+                peer.cancelRetry(doc);
             } else if (command.equals(Messages.FILE_MODIFY_REQUEST)) {
                 String modifyRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
                 if (modifyRequest != null) {
@@ -223,6 +221,7 @@ public class UDPServerThread extends ServerThread {
                     backgroundExecutor.submit(new InvalidProtocol(serverSocket, remoteHostPort, InvalidProtocolType.MISSING_FIELD, modifyResponse));
                     UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
                 }
+                peer.cancelRetry(doc);
             } else if (command.equals(Messages.FILE_BYTES_REQUEST)) {
                 String bytesRequest = MessageValidator.getInstance().validateFileBytesRequest(doc);
                 if (bytesRequest != null) {
@@ -238,6 +237,7 @@ public class UDPServerThread extends ServerThread {
                     UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
                 } else {
                     backgroundExecutor.submit(new ConstructFile(serverSocket, remoteHostPort, fileSystemManager, doc));
+                    peer.cancelRetry(doc);
                 }
             } else if (command.equals(Messages.DIRECTORY_CREATE_REQUEST)) {
                 String dirCreateRequest = MessageValidator.getInstance().validateDirectoryChangeRequest(doc);
@@ -253,6 +253,7 @@ public class UDPServerThread extends ServerThread {
                     backgroundExecutor.submit(new InvalidProtocol(serverSocket, remoteHostPort, InvalidProtocolType.MISSING_FIELD, dirCteateResponse));
                     UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
                 }
+                peer.cancelRetry(doc);
             } else if (command.equals(Messages.DIRECTORY_DELETE_REQUEST)) {
                 String dirDeleteRequest = MessageValidator.getInstance().validateDirectoryChangeRequest(doc);
                 if (dirDeleteRequest != null) {
@@ -267,6 +268,7 @@ public class UDPServerThread extends ServerThread {
                     backgroundExecutor.submit(new InvalidProtocol(serverSocket, remoteHostPort, InvalidProtocolType.MISSING_FIELD, dirDeleteResponse));
                     UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
                 }
+                peer.cancelRetry(doc);
             } else {
                 backgroundExecutor.submit(new InvalidProtocol(serverSocket, remoteHostPort, InvalidProtocolType.INVALID_COMMAND));
                 UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);

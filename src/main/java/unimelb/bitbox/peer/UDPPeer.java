@@ -2,26 +2,30 @@ package unimelb.bitbox.peer;
 
 import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.eventprocess.*;
+import unimelb.bitbox.messages.MessageInfo;
 import unimelb.bitbox.messages.Messages;
+import unimelb.bitbox.util.Configuration;
+import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.net.DatagramSocket;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.HashMap;
+import java.util.concurrent.*;
 
 //TODO add retry mechanism
 public class UDPPeer {
     public enum STATE {
         HANDSHAKE, // In the middle of a handshake process
-        OK; // After handshake successful
+        OK // After handshake successful
     }
 
     private ExecutorService sender;
+    private ScheduledExecutorService retry;
+    private int timeout;
 
     private STATE state;
-    private boolean isIncoming;
 
     private FileSystemManager fileSystemManager;
 
@@ -30,16 +34,23 @@ public class UDPPeer {
 
     private ArrayList<HostPort> queue;
 
+    private ArrayList<MessageInfo> messagesSent;
+
     public UDPPeer(FileSystemManager fileSystemManager, DatagramSocket serverSocket, HostPort remoteHostPort, boolean isIncoming) {
         this.serverSocket = serverSocket;
         this.remoteHostPort = null;
         this.fileSystemManager = fileSystemManager;
         sender = Executors.newSingleThreadExecutor();
-        this.isIncoming = isIncoming;
+        retry = Executors.newScheduledThreadPool(1);
 
         // Add the host port to the queue
         queue = new ArrayList<>();
         queue.add(remoteHostPort);
+
+        messagesSent = new ArrayList<>();
+
+        // Read the timeout value and max retries value
+        timeout = Integer.parseInt(Configuration.getConfigurationValue("timeout"));
 
         // Set the state
         this.state = STATE.HANDSHAKE;
@@ -52,6 +63,108 @@ public class UDPPeer {
         } else {
             onNewOutgoing();
         }
+    }
+
+    /**
+     * Called when the UDP peer is offline
+     */
+    public void shutdown() {
+        sender.shutdownNow();
+        retry.shutdownNow();
+    }
+
+    /**
+     * Queue a runnable to be retried after a certain time
+     * @param runnable
+     * @param doc
+     */
+    public void queueRetry(Runnable runnable, Document doc) {
+
+        // Save the document into the message info and hash it
+        MessageInfo info = new MessageInfo(doc);
+
+        int index = messagesSent.indexOf(info);
+
+        if (index == -1) {
+            info.setFuture(retry.schedule(runnable, timeout, TimeUnit.SECONDS));
+            messagesSent.add(info);
+        }
+        else {
+            info = messagesSent.get(index);
+            if (!info.isExceedRetryLimit()) {
+                info.updateFuture(retry.schedule(runnable, timeout, TimeUnit.SECONDS));
+            }
+            else {
+                UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
+            }
+        }
+    }
+
+    /**
+     * Cancel the retry which is about to happen after timeout period reaches
+     * @param doc
+     */
+    public void cancelRetry(Document doc) {
+        String command = doc.getString("command");
+
+        MessageInfo toRemove = null;
+
+        for (MessageInfo info: messagesSent) {
+            if (info.getCommand().equals(Messages.HANDSHAKE_REQUEST)) {
+                if (command.equals(Messages.HANDSHAKE_RESPONSE) || command.equals(Messages.CONNECTION_REFUSED)) {
+                    toRemove = info;
+                }
+            }
+            else if (info.getCommand().equals(Messages.DIRECTORY_CREATE_REQUEST) || info.getCommand().equals(Messages.DIRECTORY_DELETE_REQUEST)) {
+                if (!command.equals(Messages.DIRECTORY_CREATE_RESPONSE) && !command.equals(Messages.DIRECTORY_DELETE_RESPONSE)) continue;
+                String pathName = doc.getString("pathName");
+                String otherPathName = info.getDoc().getString("pathName");
+
+                if (pathName.equals(otherPathName)) {
+                    toRemove = info;
+                }
+            }
+            else {
+                if (info.getCommand().equals(Messages.FILE_BYTES_REQUEST)) {
+                    if (!command.equals(Messages.FILE_BYTES_RESPONSE)) continue;
+
+                    if (!info.getDoc().getString("position").equals(doc.getString("position"))) {
+                        continue;
+                    }
+                    if (!info.getDoc().getString("length").equals(doc.getString("length"))) {
+                        continue;
+                    }
+                }
+
+                if (!command.equals(Messages.FILE_CREATE_RESPONSE) && !command.equals(Messages.FILE_DELETE_RESPONSE) &&
+                        !command.equals(Messages.FILE_MODIFY_RESPONSE)) {
+                    continue;
+                }
+
+                //TODO change file dscripth
+                Document infofd = (Document)info.getDoc().get("fileDescriptor");
+                Document fd = (Document)info.getDoc().get("fileDescriptor");
+
+                if (!(infofd.getLong("lastModified") == fd.getLong("lastModified"))) continue;
+
+                if (!infofd.getString("md5").equals(fd.getString("md5"))) continue;
+
+                if (!(infofd.getLong("fileSize") == fd.getLong("fileSize"))) continue;
+
+                if (!info.getDoc().getString("pathName").equals(doc.getString("pathName"))) {
+                    continue;
+                }
+
+                toRemove = info;
+            }
+        }
+
+        int index = messagesSent.indexOf(toRemove);
+        
+        if (index < 0) return;
+
+        MessageInfo info = messagesSent.remove(index);
+        info.getFuture().cancel(false);
     }
 
     /**
@@ -117,23 +230,23 @@ public class UDPPeer {
     public void processFileSystemEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
         switch(fileSystemEvent.event) {
             case FILE_CREATE:
-                sender.submit(new FileCreateRequest(serverSocket, remoteHostPort, fileSystemEvent));
+                sender.submit(new FileCreateRequest(serverSocket, remoteHostPort, fileSystemEvent, this));
                 break;
 
             case FILE_DELETE:
-                sender.submit(new FileDeleteRequest(serverSocket, remoteHostPort, fileSystemEvent));
+                sender.submit(new FileDeleteRequest(serverSocket, remoteHostPort, fileSystemEvent, this));
                 break;
 
             case FILE_MODIFY:
-                sender.submit(new FileModifyRequest(serverSocket, remoteHostPort, fileSystemEvent));
+                sender.submit(new FileModifyRequest(serverSocket, remoteHostPort, fileSystemEvent, this));
                 break;
 
             case DIRECTORY_CREATE:
-                sender.submit(new DirectoryCreateRequest(serverSocket, remoteHostPort, fileSystemEvent.pathName));
+                sender.submit(new DirectoryCreateRequest(serverSocket, remoteHostPort, fileSystemEvent.pathName, this));
                 break;
 
             case DIRECTORY_DELETE:
-                sender.submit(new DirectoryDeleteRequest(serverSocket, remoteHostPort, fileSystemEvent.pathName));
+                sender.submit(new DirectoryDeleteRequest(serverSocket, remoteHostPort, fileSystemEvent.pathName, this));
                 break;
         }
     }
@@ -167,7 +280,7 @@ public class UDPPeer {
      */
     private class HandshakeReq extends EventProcess {
         public HandshakeReq(DatagramSocket socket, HostPort hostPort) {
-            super(socket, hostPort);
+            super(socket, hostPort, UDPPeer.this);
         }
 
         @Override
