@@ -1,4 +1,4 @@
-package unimelb.bitbox.connection;
+package unimelb.bitbox.peer;
 
 import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.eventprocess.EventProcess;
@@ -8,7 +8,6 @@ import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
@@ -41,9 +40,9 @@ public class OutgoingConnection extends Connection{
 
         @Override
         public void run() {
-            // Create a new socket for the connection
+            // Create a new socket for the peer
             while (!queue.isEmpty()) {
-                log.info("attempting to start connection");
+                log.info("attempting to start peer");
                 remoteHostPort = queue.remove(0);
 
                 // Create a socket for this peer
@@ -61,14 +60,14 @@ public class OutgoingConnection extends Connection{
 
 
                 // Send a HANDSHAKE_REQUEST
-                sendMessage(Messages.genHandshakeRequest(ServerMain.localHostPort));
+                sendMessage(Messages.genHandshakeRequest(ServerMain.getLocalHostPort()));
 
                 // Wait for response
                 try {
                     Document doc = Document.parse(input.readLine());
                     String command = doc.getString("command");
 
-                    // HANDSHAKE_RESPONSE, connection approved!
+                    // HANDSHAKE_RESPONSE, peer approved!
                     if (command.equals(Messages.HANDSHAKE_RESPONSE)) {
                         syncEvents();
                         listener.submit(new Listen());

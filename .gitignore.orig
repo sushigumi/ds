@@ -1,0 +1,19 @@
+.idea/
+target
+.DS_Store
+bitbox.jar
+.gitignore~
+..gitignore.un~
+doc/
+.classpath
+.project
+.settings
+config*
+share/
+<<<<<<< HEAD
+/bin/
+=======
+out/
+bitbox.zip
+report.pdf
+>>>>>>> 12d85ed576c73432578784ba730b22d3a807403d

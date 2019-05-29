@@ -1,4 +1,4 @@
-package unimelb.bitbox.connection;
+package unimelb.bitbox.peer;
 
 import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.eventprocess.EventProcess;
@@ -7,7 +7,6 @@ import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.Executors;
@@ -45,9 +44,9 @@ public class IncomingConnection extends Connection {
                 // HANDSHAKE_REQUEST received
                 if (command.equals(Messages.HANDSHAKE_REQUEST)) {
                     // If there are still available connections then send HANDSHAKE_RESPONSE
-                    if (ConnectionManager.getInstance().isAvailableConnections()) {
+                    if (TCPPeerManager.getInstance().isAvailableConnections()) {
                         remoteHostPort = new HostPort((Document)doc.get("hostPort"));
-                        sendMessage(Messages.genHandshakeResponse(ServerMain.localHostPort));
+                        sendMessage(Messages.genHandshakeResponse(ServerMain.getLocalHostPort()));
 
                         syncEvents();
 
@@ -58,13 +57,13 @@ public class IncomingConnection extends Connection {
                     }
                     // Otherwise CONNECTION_REFUSED
                     else {
-                        sendMessage(Messages.genConnectionRefused(ConnectionManager.getInstance().getPeersHostPorts()));
+                        sendMessage(Messages.genConnectionRefused(TCPPeerManager.getInstance().getPeersHostPorts()));
 
-                        // Close the connection
+                        // Close the peer
                         close();
                     }
                 }
-                // Other message received, respond with INVALID_PROTOCOL and close connection
+                // Other message received, respond with INVALID_PROTOCOL and close peer
                 else {
                     sendMessage(Messages.genInvalidProtocol("expecting HANDSHAKE_REQUEST"));
                     close();

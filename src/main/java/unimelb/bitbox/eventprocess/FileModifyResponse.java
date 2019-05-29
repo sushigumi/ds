@@ -1,11 +1,15 @@
 package unimelb.bitbox.eventprocess;
 
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
+import unimelb.bitbox.util.HostPort;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
@@ -17,6 +21,13 @@ public class FileModifyResponse extends EventProcess {
 
 	public FileModifyResponse(BufferedWriter output, Document received, FileSystemManager fileSystemManager) {
 		super(output);
+		this.received = received;
+		this.fileSystemManager = fileSystemManager;
+	}
+
+	public FileModifyResponse(DatagramSocket socket, HostPort hostPort,
+							  Document received, FileSystemManager fileSystemManager) {
+		super(socket, hostPort);
 		this.received = received;
 		this.fileSystemManager = fileSystemManager;
 	}
