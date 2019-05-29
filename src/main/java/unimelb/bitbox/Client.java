@@ -55,7 +55,11 @@ public class Client {
 			//what if the input argument is invalid, e.g., it should be ip:port, actually it is a bunch of characters
 			HostPort serverHostPort = new HostPort(argsCommand.getServerHostPort());
 			
+			System.out.print(serverHostPort.host instanceof String);
+			System.out.println(serverHostPort.port);
+			
 			try (Socket socket = new Socket(serverHostPort.host, serverHostPort.port);){
+
 				
 				BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
 				BufferedWriter output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
@@ -173,8 +177,8 @@ public class Client {
 	 private static String Encrypt(byte[] secretKey, String message) {		 
 		 Key aesKey = new SecretKeySpec(secretKey, "AES");
 		 try {
-			//Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-			Cipher cipher = Cipher.getInstance("AES");			
+			Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+			//Cipher cipher = Cipher.getInstance("AES");			
 			cipher.init(Cipher.ENCRYPT_MODE, aesKey);			
 			byte[] encrypted = cipher.doFinal(message.getBytes("UTF-8"));//LOWERCASE?"utf-8"
 		    

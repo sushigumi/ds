@@ -11,6 +11,7 @@ import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
@@ -51,7 +52,7 @@ public class Server {
 			BufferedReader input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
 			BufferedWriter output = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"));
 			byte[] secretKey = null;
-			
+			System.out.println(input.readLine());
 			//Read the message from the client and reply
 			String clientMsg = null;
 			while((clientMsg = input.readLine()) != null) {
@@ -71,6 +72,7 @@ public class Server {
 	        				//maybe wrong?
 	        				String[] keyElement = key.split(" ");
 	        				//byte[] publicKey = keyElement[1].getBytes("UTF-8");
+	        				System.out.println("Read public key: " + key);
 	        				
 	        				String keyTest = "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAwyl1KXKUMS3+VnxL22Oq" + 
 	        						"7RDrmCHzF4dZWWYeP6Np145bYLog+HkieFhDrjI5H0m0Gq8YpAjKvvsSGjrFwpUU" + 
@@ -166,7 +168,26 @@ public class Server {
 	
 	
 	private static byte[] generateSecretKey() {
-		  KeyGenerator keyGen = null;
+		/*try {
+			  // Generate a 128bit key
+			    final int outputKeyLength = 128;
+
+			    //SecureRandom secureRandom = new SecureRandom();
+			    SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
+			    // Do *not* seed secureRandom! Automatically seeded from system entropy.
+			    KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+			    keyGen.init(outputKeyLength, secureRandom);
+			    SecretKey secretKey = keyGen.generateKey();
+			    System.out.println(secretKey);
+			    return secretKey.getEncoded();
+			    
+		 } catch (NoSuchAlgorithmException e) {
+			   e.printStackTrace();
+			   return null;
+		}
+		KeyGenerator keyGenerator;*/
+		
+		KeyGenerator keyGen = null;
 		  try {
 		    /* Get KeyGenerator object that generates secret keys for the
 		    * specified algorithm.
@@ -196,12 +217,13 @@ public class Server {
 	 
 	 
 	 private static String Decrypt(byte[] secretKey, String payload) {		 
-		 byte[] message = Base64.getDecoder().decode(payload);		 
+		 byte[] message = Base64.getDecoder().decode(payload);
 		 Key aesKey = new SecretKeySpec(secretKey, "AES");
-			//Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+			
 		 try {
-				Cipher cipher = Cipher.getInstance("AES");			
-				cipher.init(Cipher.DECRYPT_MODE, aesKey);			
+			 	Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+				//Cipher cipher = Cipher.getInstance("AES");			
+				cipher.init(Cipher.DECRYPT_MODE, aesKey);
 				byte[] decrypted = cipher.doFinal(message);	
 				String originalMessage = new String(decrypted, "UTF-8");//LOWERCASE?"utf-8"
 			    return originalMessage;
@@ -215,8 +237,8 @@ public class Server {
 	 private static String Encrypt(byte[] secretKey, String message) {		 
 		 Key aesKey = new SecretKeySpec(secretKey, "AES");
 		 try {
-			//Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-			Cipher cipher = Cipher.getInstance("AES");			
+			Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+			//Cipher cipher = Cipher.getInstance("AES");			
 			cipher.init(Cipher.ENCRYPT_MODE, aesKey);			
 			byte[] encrypted = cipher.doFinal(message.getBytes("UTF-8"));//LOWERCASE?"utf-8"
 			return Base64.getEncoder().encodeToString(encrypted);	
