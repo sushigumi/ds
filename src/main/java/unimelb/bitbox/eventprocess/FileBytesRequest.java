@@ -1,9 +1,14 @@
 package unimelb.bitbox.eventprocess;
 
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
+import unimelb.bitbox.peer.UDPPeer;
 import unimelb.bitbox.util.Document;
+import unimelb.bitbox.util.HostPort;
 
 import java.io.BufferedWriter;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.ArrayList;
 
 /**
@@ -18,6 +23,12 @@ public class FileBytesRequest extends EventProcess {
 
     public FileBytesRequest(BufferedWriter output, Document fileDescriptor, String pathName) {
         super(output);
+        this.fileDescriptor = fileDescriptor;
+        this.pathName = pathName;
+    }
+
+    public FileBytesRequest(DatagramSocket socket, HostPort hostPort, Document fileDescriptor, String pathName, UDPPeer peer) {
+        super(socket, hostPort, peer);
         this.fileDescriptor = fileDescriptor;
         this.pathName = pathName;
     }

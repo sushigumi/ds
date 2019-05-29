@@ -1,4 +1,4 @@
-package unimelb.bitbox.connection;
+package unimelb.bitbox.peer;
 
 import unimelb.bitbox.util.Configuration;
 import unimelb.bitbox.util.FileSystemManager;
@@ -8,7 +8,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-public class ConnectionManager implements ConnectionObserver {
+public class TCPPeerManager implements ConnectionObserver {
     private static Logger log = Logger.getLogger(ConnectionObserver.class.getName());
 
     public final int MAX_INCOMING_CONNECTIONS;
@@ -16,13 +16,13 @@ public class ConnectionManager implements ConnectionObserver {
     private int nIncomingConnections;
 
 
-    private static ConnectionManager ourInstance = new ConnectionManager();
+    private static TCPPeerManager ourInstance = new TCPPeerManager();
 
-    public static ConnectionManager getInstance() {
+    public static TCPPeerManager getInstance() {
         return ourInstance;
     }
 
-    private ConnectionManager() {
+    private TCPPeerManager() {
         peers = new ArrayList<>();
         nIncomingConnections = 0;
         MAX_INCOMING_CONNECTIONS = Integer.parseInt(Configuration.getConfigurationValue("maximumIncommingConnections"));
@@ -38,7 +38,7 @@ public class ConnectionManager implements ConnectionObserver {
     }
 
     /**
-     * Accept a connection from a peer
+     * Accept a peer from a peer
      * @param fileSystemManager
      * @param socket
      */
@@ -48,8 +48,8 @@ public class ConnectionManager implements ConnectionObserver {
     }
 
     /**
-     * A connection is closed, so remove it from the list of connections
-     * If it is an incoming connection, reduce nIncomingConnections
+     * A peer is closed, so remove it from the list of connections
+     * If it is an incoming peer, reduce nIncomingConnections
      * @param connection
      * @param isIncoming
      */
@@ -60,13 +60,13 @@ public class ConnectionManager implements ConnectionObserver {
         }
         peers.remove(connection);
 
-        log.info("successfully closed connection");
+        log.info("successfully closed peer");
         log.info(peers.size() + " peers currently connected");
     }
 
     @Override
     public void retry(Connection connection) {
-        log.info("retrying connection..");
+        log.info("retrying peer..");
         connect(connection.fileSystemManager, connection.remoteHostPort.toString());
     }
 

@@ -1,9 +1,13 @@
 package unimelb.bitbox.eventprocess;
 
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.InvalidProtocolType;
 import unimelb.bitbox.messages.Messages;
+import unimelb.bitbox.util.HostPort;
 
 import java.io.BufferedWriter;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 public class InvalidProtocol extends EventProcess {
     private InvalidProtocolType type;
@@ -12,6 +16,12 @@ public class InvalidProtocol extends EventProcess {
 
     public InvalidProtocol(BufferedWriter output, InvalidProtocolType type) {
         super(output);
+        this.type = type;
+    }
+
+    public InvalidProtocol(DatagramSocket socket, HostPort hostPort,
+                           InvalidProtocolType type) {
+        super(socket, hostPort);
         this.type = type;
     }
 
@@ -27,11 +37,19 @@ public class InvalidProtocol extends EventProcess {
         this.field = field;
     }
 
+    public InvalidProtocol(DatagramSocket socket, HostPort hostPort, InvalidProtocolType type, String field) {
+        super(socket, hostPort);
+        this.type = type;
+        this.field = field;
+    }
+
     public InvalidProtocol(BufferedWriter output, String message) {
         super(output);
         type = InvalidProtocolType.CUSTOM;
         this.message = message;
     }
+
+    //TODO add some for this type of messages
 
     @Override
     public void run() {

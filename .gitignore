@@ -10,3 +10,6 @@ doc/
 .settings
 config*
 share/
+out/
+bitbox.zip
+report.pdf

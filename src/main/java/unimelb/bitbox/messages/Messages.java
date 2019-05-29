@@ -35,7 +35,7 @@ public class Messages {
     public static final String FILE_BYTES_RESPONSE = "FILE_BYTES_RESPONSE";
 
     // Messages to send back
-    private static final String CONNECTION_LIMIT_REACHED = "connection limit reached";
+    private static final String CONNECTION_LIMIT_REACHED = "peer limit reached";
 
     private Messages() {
     }
@@ -80,7 +80,7 @@ public class Messages {
     }
 
     /**
-     * Generates a string that represents a connection refused message
+     * Generates a string that represents a peer refused message
      * @param peers
      * @return
      */

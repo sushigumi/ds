@@ -1,11 +1,15 @@
 package unimelb.bitbox.eventprocess;
 
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
+import unimelb.bitbox.util.HostPort;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -22,6 +26,13 @@ public class ConstructFile extends EventProcess {
     public ConstructFile(BufferedWriter output, FileSystemManager fileSystemManager,
                          Document fileBytesResponse) {
         super(output);
+        this.fileSystemManager = fileSystemManager;
+        this.fileBytesResponse = fileBytesResponse;
+    }
+
+    public ConstructFile(DatagramSocket datagramSocket, HostPort hostPort,
+                         FileSystemManager fileSystemManager, Document fileBytesResponse) {
+        super(datagramSocket, hostPort);
         this.fileSystemManager = fileSystemManager;
         this.fileBytesResponse = fileBytesResponse;
     }

@@ -1,9 +1,13 @@
 package unimelb.bitbox.eventprocess;
 import java.io.BufferedWriter;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
+import unimelb.bitbox.util.HostPort;
 
 /**
  * @author yanli
@@ -19,6 +23,14 @@ public class FileDeleteResponse extends EventProcess
 							  FileSystemManager fileSystemManager)
 	{
 		super(output);
+		this.received = received;
+		this.fileSystemManager = fileSystemManager;
+	}
+
+	public FileDeleteResponse(DatagramSocket socket, HostPort hostPort, Document received,
+							  FileSystemManager fileSystemManager)
+	{
+		super(socket, hostPort);
 		this.received = received;
 		this.fileSystemManager = fileSystemManager;
 	}
