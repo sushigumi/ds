@@ -1,4 +1,4 @@
-package main.java.unimelb.bitbox;
+package unimelb.bitbox;
 
 import org.kohsuke.args4j.Option;
 

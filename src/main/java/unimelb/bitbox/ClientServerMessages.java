@@ -1,7 +1,7 @@
-package main.java.unimelb.bitbox;
+package unimelb.bitbox;
 
-import main.java.unimelb.bitbox.util.Document;
-import main.java.unimelb.bitbox.util.HostPort;
+import unimelb.bitbox.util.Document;
+import unimelb.bitbox.util.HostPort;
 
 public class ClientServerMessages {
 	
@@ -28,6 +28,7 @@ public class ClientServerMessages {
 	public static String genAuthRequest() {
 		Document doc = new Document();
         doc.append("command", AUTH_REQUEST);
+        //identity should be variable
         doc.append("identity", "yanli@Yans-MacBook-Pro.local");
         return doc.toJson();
     }
@@ -67,7 +68,7 @@ public class ClientServerMessages {
 		Document doc = new Document();
 		doc.append("command", CONNECT_PEER_REQUEST);
 		doc.append("host", hostPort.host);
-		doc.append("port", hostPort.port);//Not sure if it's gonna work
+		doc.append("port", hostPort.port);
         return doc.toJson();
     }
 	
@@ -76,7 +77,7 @@ public class ClientServerMessages {
 		doc.append("command", CONNECT_PEER_RESPONSE);
 		//DO STH
 		
-		doc.append("host", "");
+		doc.append("host", "");//add sth
 		doc.append("port", 8111);//should be variable
 		doc.append("status", true);
 		doc.append("message","connected to peer");

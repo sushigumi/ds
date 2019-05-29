@@ -1,4 +1,4 @@
-package main.java.unimelb.bitbox.util;
+package unimelb.bitbox.util;
 
 /**
  * Simple class to manage a host string and port number. Provides conversion to and from a {@link Document}

@@ -1,4 +1,4 @@
-package main.java.unimelb.bitbox.util;
+package unimelb.bitbox.util;
 
 import unimelb.bitbox.util.FileSystemManager.FileSystemEvent;
 
