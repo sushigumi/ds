@@ -41,6 +41,8 @@ public class IncomingConnection extends Connection {
                 Document doc = Document.parse(input.readLine());
                 String command = doc.getString("command");
 
+                //System.out.println(doc.toJson());
+
                 // HANDSHAKE_REQUEST received
                 if (command.equals(Messages.HANDSHAKE_REQUEST)) {
                     // If there are still available connections then send HANDSHAKE_RESPONSE

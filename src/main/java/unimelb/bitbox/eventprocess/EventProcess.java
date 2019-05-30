@@ -42,6 +42,7 @@ public abstract class EventProcess implements Runnable {
     }
 
     public EventProcess() {
+        this.mode = ServerMain.MODE_TCP;
         this.writer = null;
     }
 
