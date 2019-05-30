@@ -178,7 +178,7 @@ public class Server {
 				case ClientServerMessages.DISCONNECT_PEER_REQUEST:
 					port = (int) request.getLong("port");
 					String disconnectPeerResponse = ClientServerMessages.genDisconnectPeerResponse(request.getString("host"),
-							port, Configuration.getConfigurationValue(("mode")));
+							port, datagramSocket);
 					System.out.println("4.Disconnect peer response (raw): " + disconnectPeerResponse + "\n");
 					String encryptDisconnectPeersResponse = encryption(secretKey, disconnectPeerResponse);
 					System.out.println("5.Disconnect peer response (encrypted): " + encryptDisconnectPeersResponse);
