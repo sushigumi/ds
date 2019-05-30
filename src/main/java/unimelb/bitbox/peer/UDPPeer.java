@@ -10,6 +10,8 @@ import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.*;
@@ -85,19 +87,21 @@ public class UDPPeer {
         // Save the document into the message info and hash it
         MessageInfo info = new MessageInfo(doc);
 
-        int index = messagesSent.indexOf(info);
+        synchronized (this) {
 
-        if (index == -1) {
-            info.setFuture(retry.schedule(runnable, timeout, TimeUnit.SECONDS));
-            messagesSent.add(info);
-        }
-        else {
-            info = messagesSent.get(index);
-            if (!info.isExceedRetryLimit()) {
-                info.updateFuture(retry.schedule(runnable, timeout, TimeUnit.SECONDS));
-            }
-            else {
-                UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
+            int index = messagesSent.indexOf(info);
+
+            if (index == -1) {
+                info.setFuture(retry.schedule(runnable, timeout, TimeUnit.SECONDS));
+                messagesSent.add(info);
+            } else {
+                info = messagesSent.get(index);
+                if (!info.isExceedRetryLimit()) {
+                    info.updateFuture(retry.schedule(runnable, timeout, TimeUnit.SECONDS));
+                } else {
+                    System.out.println(doc.toJson());
+                    UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
+                }
             }
         }
     }
@@ -110,54 +114,54 @@ public class UDPPeer {
         String command = doc.getString("command");
 
         MessageInfo toRemove = null;
+        synchronized (this) {
 
-        for (MessageInfo info: messagesSent) {
-            if (info.getCommand().equals(Messages.HANDSHAKE_REQUEST)) {
-                if (command.equals(Messages.HANDSHAKE_RESPONSE) || command.equals(Messages.CONNECTION_REFUSED)) {
-                    toRemove = info;
-                }
-            }
-            else if (info.getCommand().equals(Messages.DIRECTORY_CREATE_REQUEST) || info.getCommand().equals(Messages.DIRECTORY_DELETE_REQUEST)) {
-                if (!command.equals(Messages.DIRECTORY_CREATE_RESPONSE) && !command.equals(Messages.DIRECTORY_DELETE_RESPONSE)) continue;
-                String pathName = doc.getString("pathName");
-                String otherPathName = info.getDoc().getString("pathName");
+            for (MessageInfo info : messagesSent) {
+                if (info.getCommand().equals(Messages.HANDSHAKE_REQUEST)) {
+                    if (command.equals(Messages.HANDSHAKE_RESPONSE) || command.equals(Messages.CONNECTION_REFUSED)) {
+                        toRemove = info;
+                    }
+                } else if (info.getCommand().equals(Messages.DIRECTORY_CREATE_REQUEST) || info.getCommand().equals(Messages.DIRECTORY_DELETE_REQUEST)) {
+                    if (!command.equals(Messages.DIRECTORY_CREATE_RESPONSE) && !command.equals(Messages.DIRECTORY_DELETE_RESPONSE))
+                        continue;
+                    String pathName = doc.getString("pathName");
+                    String otherPathName = info.getDoc().getString("pathName");
 
-                if (pathName.equals(otherPathName)) {
-                    toRemove = info;
-                }
-            }
-            else {
-                if (info.getCommand().equals(Messages.FILE_BYTES_REQUEST)) {
-                    if (!command.equals(Messages.FILE_BYTES_RESPONSE)) continue;
+                    if (pathName.equals(otherPathName)) {
+                        toRemove = info;
+                    }
+                } else {
+                    if (info.getCommand().equals(Messages.FILE_BYTES_REQUEST)) {
+                        if (!command.equals(Messages.FILE_BYTES_RESPONSE)) continue;
 
-                    if (!info.getDoc().getString("position").equals(doc.getString("position"))) {
+                        if (!info.getDoc().getString("position").equals(doc.getString("position"))) {
+                            continue;
+                        }
+                        if (!info.getDoc().getString("length").equals(doc.getString("length"))) {
+                            continue;
+                        }
+                    }
+
+                    if (!command.equals(Messages.FILE_CREATE_RESPONSE) && !command.equals(Messages.FILE_DELETE_RESPONSE) &&
+                            !command.equals(Messages.FILE_MODIFY_RESPONSE)) {
                         continue;
                     }
-                    if (!info.getDoc().getString("length").equals(doc.getString("length"))) {
+
+                    Document infofd = (Document) info.getDoc().get("fileDescriptor");
+                    Document fd = (Document) info.getDoc().get("fileDescriptor");
+
+                    if (!(infofd.getLong("lastModified") == fd.getLong("lastModified"))) continue;
+
+                    if (!infofd.getString("md5").equals(fd.getString("md5"))) continue;
+
+                    if (!(infofd.getLong("fileSize") == fd.getLong("fileSize"))) continue;
+
+                    if (!info.getDoc().getString("pathName").equals(doc.getString("pathName"))) {
                         continue;
                     }
+
+                    toRemove = info;
                 }
-
-                if (!command.equals(Messages.FILE_CREATE_RESPONSE) && !command.equals(Messages.FILE_DELETE_RESPONSE) &&
-                        !command.equals(Messages.FILE_MODIFY_RESPONSE)) {
-                    continue;
-                }
-
-                //TODO change file dscripth
-                Document infofd = (Document)info.getDoc().get("fileDescriptor");
-                Document fd = (Document)info.getDoc().get("fileDescriptor");
-
-                if (!(infofd.getLong("lastModified") == fd.getLong("lastModified"))) continue;
-
-                if (!infofd.getString("md5").equals(fd.getString("md5"))) continue;
-
-                if (!(infofd.getLong("fileSize") == fd.getLong("fileSize"))) continue;
-
-                if (!info.getDoc().getString("pathName").equals(doc.getString("pathName"))) {
-                    continue;
-                }
-
-                toRemove = info;
             }
         }
 
@@ -175,6 +179,14 @@ public class UDPPeer {
      */
     private void onNewOutgoing() {
         this.remoteHostPort = queue.remove(0);
+
+        try {
+            String ipaddress = InetAddress.getByName(remoteHostPort.host).getHostAddress();
+            this.remoteHostPort = new HostPort(ipaddress, remoteHostPort.port);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+            UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
+        }
 
         // Send a HANDSHAKE_REQUEST to the peer
         sender.submit(new HandshakeReq(serverSocket, remoteHostPort));
@@ -200,6 +212,9 @@ public class UDPPeer {
         if (UDPPeerManager.getInstance().isAvailableConnections()) {
             sender.submit(new HandshakeRes(serverSocket, remoteHostPort));
             state = STATE.OK;
+
+            //TODO Update the remote host port to be ip
+
 
             // Generate the sync events
             syncEvents();
@@ -267,6 +282,12 @@ public class UDPPeer {
      */
     public HostPort getAdvertisedHostPort() {
         return advertisedHostPort;
+    }
+    /** Set the remote host port and update it from the advertised name to the ip address
+     * @param remoteHostPort
+     */
+    public void setRemoteHostPort(HostPort remoteHostPort) {
+        this.remoteHostPort = remoteHostPort;
     }
 
     /**

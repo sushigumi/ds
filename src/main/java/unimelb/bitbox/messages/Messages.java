@@ -1,5 +1,6 @@
 package unimelb.bitbox.messages;
 
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.util.Configuration;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
@@ -169,7 +170,12 @@ public class Messages {
      * @return
      */
     public static ArrayList<String> genFileBytesRequests(Document fileDescriptor, String pathName) {
-        long blockSize = Long.parseLong(Configuration.getConfigurationValue("blockSize"));
+        long blockSize;
+        if (ServerMain.getMode().equals(ServerMain.MODE_TCP)) {
+            blockSize = Long.parseLong(Configuration.getConfigurationValue("blockSize"));
+        } else {
+            blockSize = 8192;
+        }
 
         ArrayList<String> messages = new ArrayList<>();
         long fileSize = fileDescriptor.getLong("fileSize");
