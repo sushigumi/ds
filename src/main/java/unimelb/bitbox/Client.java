@@ -1,29 +1,23 @@
 package unimelb.bitbox;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.Socket;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.kohsuke.args4j.CmdLineException;
@@ -45,7 +39,6 @@ public class Client {
 			
 			//Parse the arguments
 			parser.parseArgument(args);
-			
 			//After parsing, the fields in argsBean have been updated with the given
 			//command line arguments
 			System.out.println("Command Name: " + argsCommand.getCommandName());
@@ -76,7 +69,7 @@ public class Client {
 		    	System.out.println("2.authResponse received: " + response + "\n");
 		    	Document authResponse = Document.parse(response);
 		    	
-		    	if(authResponse.getBoolean("status") == true) {
+		    	if(authResponse.getBoolean("status")) {
 		    		
 		    		String message = authResponse.getString("AES128");
 		    		byte[] secretKey = DecryptSecretKey(message);
@@ -86,6 +79,7 @@ public class Client {
 		    		
 		    		//As long as receiving a message,close the socket???
 		    		String commandResponse = input.readLine();
+					System.out.println("commandResponse: " + commandResponse);
 		    		if(commandResponse != null && !commandResponse.isEmpty()) {
 		    			
 		    			socket.close();
@@ -111,9 +105,11 @@ public class Client {
 		
 			case "list_peers":	
 				String listPeersRequest = ClientServerMessages.genListPeersRequest();			
-				String encryptListPeerRequest = Encrypt(secretKey, listPeersRequest);			
+				//String encryptListPeerRequest = Encrypt(secretKey, listPeersRequest);
+				String encryptListPeerRequest = encryption(secretKey, listPeersRequest);
 				String payloadListPeerRequest = ClientServerMessages.genPayload(encryptListPeerRequest);
 				output.write(payloadListPeerRequest + "\n");
+				System.out.println("3.send list peer request: " + payloadListPeerRequest);
 		    	output.flush();
 							
 				break;
@@ -121,7 +117,8 @@ public class Client {
 			case "connect_peer":
 				HostPort connectPeerHostPort = new HostPort(argsCommand.getPeerHostPort());
 				String connectPeerRequest = ClientServerMessages.genConnectPeerRequest(connectPeerHostPort);			
-				String encryptConnectPeerRequest = Encrypt(secretKey, connectPeerRequest);			
+				//String encryptConnectPeerRequest = Encrypt(secretKey, connectPeerRequest);
+				String encryptConnectPeerRequest = encryption(secretKey, connectPeerRequest);
 				String payloadConnectPeerRequest = ClientServerMessages.genPayload(encryptConnectPeerRequest);
 				System.out.println("3. connect request:" + payloadConnectPeerRequest + "\n");
 				output.write(payloadConnectPeerRequest + "\n");
@@ -132,7 +129,8 @@ public class Client {
 			case "disconnect_peer":
 				HostPort disconPeerHostPort = new HostPort(argsCommand.getPeerHostPort());
 				String disconnectPeerRequest = ClientServerMessages.genDisconnectPeerRequest(disconPeerHostPort);			
-				String encryptdisconnectPeerRequest = Encrypt(secretKey, disconnectPeerRequest);			
+				//String encryptdisconnectPeerRequest = Encrypt(secretKey, disconnectPeerRequest);
+				String encryptdisconnectPeerRequest = encryption(secretKey, disconnectPeerRequest);
 				String payloaddisconnectPeerRequest = ClientServerMessages.genPayload(encryptdisconnectPeerRequest);				
 				output.write(payloaddisconnectPeerRequest + "\n");
 		    	output.flush();
@@ -189,5 +187,47 @@ public class Client {
 		} 
 		 	
 	 }
-	 
+
+	public static String encryption(byte[] keyBytes, String plainText) {
+
+		byte[] plaintTextByteArray = new byte[0];
+		try {
+			plaintTextByteArray = plainText.getBytes("UTF8");
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+
+		// generate IV
+		SecureRandom secureRandom = new SecureRandom();
+		byte[] iv = new byte[16]; //NEVER REUSE THIS IV WITH SAME KEY
+		secureRandom.nextBytes(iv);
+
+		Cipher cipher = null;
+		try {
+			cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+			e.printStackTrace();
+		}
+
+		try {
+			cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"), new IvParameterSpec(iv));
+		} catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+			e.printStackTrace();
+		}
+
+		byte[] cipherText = new byte[0];
+		try {
+			cipherText = cipher.doFinal(plaintTextByteArray);
+		} catch (IllegalBlockSizeException | BadPaddingException e) {
+			e.printStackTrace();
+		}
+
+		ByteBuffer byteBuffer = ByteBuffer.allocate(1 + iv.length + cipherText.length);
+		byteBuffer.put((byte) iv.length);
+		byteBuffer.put(iv);
+		byteBuffer.put(cipherText);
+		return Base64.getEncoder().encodeToString(byteBuffer.array());
+	}
+
+
 }
