@@ -78,6 +78,32 @@ public class ClientServerMessages {
 		doc.append("port", hostPort.port);
         return doc.toJson();
     }
+
+    public static String genConnectPeerResponseFail(String host, int port, DatagramSocket socket) {
+		Document doc = new Document();
+		doc.append("command", CONNECT_PEER_RESPONSE);
+		doc.append("host", host);
+		doc.append("port", port);
+		HostPort hostPort = new HostPort(host,port);
+
+		doc.append("status", false);
+		doc.append("message", "connection failed");
+
+		return doc.toJson();
+	}
+
+	public static String genConnectPeerResponseSuccess(String host, int port, DatagramSocket socket) {
+		Document doc = new Document();
+		doc.append("command", CONNECT_PEER_RESPONSE);
+		doc.append("host", host);
+		doc.append("port", port);
+		HostPort hostPort = new HostPort(host, port);
+
+		doc.append("status", true);
+		doc.append("message", "connection success");
+
+		return doc.toJson();
+	}
 	
 	public static String genConnectPeerResponse(String host, int port, DatagramSocket socket) {
 		Document doc = new Document();
@@ -159,5 +185,4 @@ public class ClientServerMessages {
 
         return doc.toJson();
     }
-
 }

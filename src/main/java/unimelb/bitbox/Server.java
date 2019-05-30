@@ -14,7 +14,9 @@ import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import unimelb.bitbox.peer.Connection;
 import unimelb.bitbox.peer.TCPPeerManager;
+import unimelb.bitbox.peer.UDPPeer;
 import unimelb.bitbox.peer.UDPPeerManager;
 import unimelb.bitbox.util.Configuration;
 import unimelb.bitbox.util.Document;
@@ -134,9 +136,36 @@ public class Server {
 					
 				case ClientServerMessages.CONNECT_PEER_REQUEST:
 					int port = (int)request.getLong("port");
+					String hostname = request.getString("host");
 
-					String connectPeerResponse = ClientServerMessages.genConnectPeerResponse(request.getString("host"),
-							port,datagramSocket);
+					HostPort remoteHostPort = new HostPort(hostname, port);
+
+					String connectPeerResponse;
+					while (true) {
+						if (ServerMain.getMode().equals(ServerMain.MODE_UDP)) {
+							UDPPeer.STATE state = UDPPeerManager.getInstance().getStateByAdvertisedHostPort(remoteHostPort);
+
+							if (state == UDPPeer.STATE.OK) {
+								connectPeerResponse = ClientServerMessages.genConnectPeerResponseSuccess(hostname, port, datagramSocket);
+								break;
+							}
+							else if (state == null) {
+								connectPeerResponse = ClientServerMessages.genConnectPeerResponseFail(hostname, port, datagramSocket);
+								break;
+							}
+						}
+						else if (ServerMain.getMode().equals(ServerMain.MODE_TCP)) {
+							Connection.STATE state = TCPPeerManager.getInstance().getPeerState(remoteHostPort);
+							if (state == Connection.STATE.OK) {
+								connectPeerResponse = ClientServerMessages.genConnectPeerResponseSuccess(hostname, port, datagramSocket);
+								break;
+							}
+							else if (state == null) {
+								connectPeerResponse = ClientServerMessages.genConnectPeerResponseFail(hostname, port, datagramSocket);
+								break;
+							}
+						}
+					}
 					System.out.println("4. connect peer response (raw): " + connectPeerResponse + "\n");
 					String encryptConnectPeerResponse = encryption(secretKey, connectPeerResponse);
 					System.out.println("5.connect peer response (encrypted): " + encryptConnectPeerResponse);
@@ -268,8 +297,6 @@ public class Server {
 		}
 		return null;
 	}
-
-
 }
 
 

@@ -23,6 +23,7 @@ public class OutgoingConnection extends Connection{
         this.remoteHostPort = null;
         this.socket = null;
         this.isIncoming = false;
+        this.state = STATE.HANDSHAKE;
         this.nRetries = 0;
 
         // Add the first host port to the queue
@@ -70,6 +71,7 @@ public class OutgoingConnection extends Connection{
                     // HANDSHAKE_RESPONSE, peer approved!
                     if (command.equals(Messages.HANDSHAKE_RESPONSE)) {
                         syncEvents();
+                        state = STATE.OK;
                         listener.submit(new Listen());
 
                         log.info("successfully connected to peer " + remoteHostPort);

@@ -28,7 +28,7 @@ public class ServerMain implements FileSystemObserver {
 
 	public static final int MAX_RETRIES = Integer.parseInt(Configuration.getConfigurationValue("retries"));
 
-	private String mode; // TODO could change to enum?
+	private static String mode; // TODO could change to enum?
 
 	private static Logger log = Logger.getLogger(ServerMain.class.getName());
 	protected FileSystemManager fileSystemManager;
@@ -55,8 +55,10 @@ public class ServerMain implements FileSystemObserver {
 			log.severe("invalid server mode. please recheck configuration properties");
 			System.exit(1);
 		}
+	}
 
-		new Server();
+	public static String getMode() {
+		return mode;
 	}
 
 	/**

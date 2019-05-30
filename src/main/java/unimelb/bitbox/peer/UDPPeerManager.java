@@ -91,6 +91,16 @@ public class UDPPeerManager {
         return hostPorts;
     }
 
+    public UDPPeer.STATE getStateByAdvertisedHostPort(HostPort aHostPort) {
+        for (UDPPeer peer: rememberedPeers) {
+            if (peer.getAdvertisedHostPort().equals(aHostPort)) {
+                return peer.getState();
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Process a file system event and send it to all the peers
      * @param fileSystemEvent

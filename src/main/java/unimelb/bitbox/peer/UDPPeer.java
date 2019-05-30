@@ -30,6 +30,7 @@ public class UDPPeer {
     private FileSystemManager fileSystemManager;
 
     private DatagramSocket serverSocket;
+    private HostPort advertisedHostPort;
     private HostPort remoteHostPort;
 
     private ArrayList<HostPort> queue;
@@ -58,6 +59,7 @@ public class UDPPeer {
         // Start the handshake process
         if (isIncoming) {
             // Set the host port since it is an incoming connection and we will not receive a CONNECTION_REFUSED
+            this.advertisedHostPort = remoteHostPort;
             this.remoteHostPort = remoteHostPort;
             onNewIncoming();
         } else {
@@ -257,6 +259,14 @@ public class UDPPeer {
      */
     public HostPort getRemoteHostPort() {
         return remoteHostPort;
+    }
+
+    /**
+     * Get the advertised host port of the client
+     * @return
+     */
+    public HostPort getAdvertisedHostPort() {
+        return advertisedHostPort;
     }
 
     /**
