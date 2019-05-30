@@ -139,7 +139,7 @@ public class ClientServerMessages {
 		doc.append("host",host);
 		doc.append("port",port);
 		//DO STH
-
+		/*
 		HostPort hostPort = new HostPort(host,port);
 
 		if( mode.equals("udp") && Arrays.asList(UDPPeerManager.getInstance().getConnectedPeers()).contains(hostPort)) {
@@ -158,7 +158,7 @@ public class ClientServerMessages {
 		else{
 			doc.append("status", false);
 			doc.append("message","connection not active");
-		}
+		}*/
 
         return doc.toJson();
     }

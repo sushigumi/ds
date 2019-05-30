@@ -5,9 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.security.*;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
 
@@ -50,7 +48,7 @@ public class Server {
 			BufferedReader input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
 			BufferedWriter output = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"));
 			byte[] secretKey = null;
-			//System.out.println(input.readLine());
+
 			//Read the message from the client and reply
 			String clientMsg = null;
 			while((clientMsg = input.readLine()) != null) {
@@ -91,11 +89,11 @@ public class Server {
 	            if (doc.containsKey("payload")) {
 	            	
 	            	String payload = doc.getString("payload");
-	            	String requestString = Decrypt(secretKey, payload);
-					//String requestString = decryption(secretKey,payload);
+					String requestString = decryption(secretKey,payload);
 	            	System.out.println("3. command request received: " + requestString + "\n");
 	            	Document request = Document.parse(requestString);
 	            	ParseRequest(output, request, secretKey, server);
+
 	            }	
             }
 		}catch (Exception e) {
@@ -104,85 +102,67 @@ public class Server {
 	}
 	
 	
-	private static void ParseRequest(BufferedWriter output, Document request, byte[] secretKey, ServerSocket server) throws IOException {
-		
-		switch(request.getString("command")){
-		
-			case ClientServerMessages.LIST_PEERS_REQUEST:
-		    	//do sth;//There should be arguments here.
-				ArrayList<HostPort> hostPorts;
-				if( Configuration.getConfigurationValue("mode").equals("tcp")){
-					hostPorts =  TCPPeerManager.getInstance().getPeersHostPorts();
-				} else{
-					hostPorts = UDPPeerManager.getInstance().getConnectedPeers();
+	private static void ParseRequest(BufferedWriter output, Document request, byte[] secretKey, ServerSocket server){
+		try {
+			switch(request.getString("command")){
+			
+				case ClientServerMessages.LIST_PEERS_REQUEST:
+			    	//do sth;//There should be arguments here.
+					ArrayList<HostPort> hostPorts;
+					if( Configuration.getConfigurationValue("mode").equals("tcp")){
+						hostPorts =  TCPPeerManager.getInstance().getPeersHostPorts();
+					} else{
+						hostPorts = UDPPeerManager.getInstance().getConnectedPeers();
+					}
+					String listPeersResponse = ClientServerMessages.genListPeersResponse(hostPorts);
+					System.out.println("4.List peers response (raw): " + listPeersResponse + "\n");
+					String encryptListPeersResponse =encryption(secretKey, listPeersResponse);
+					System.out.println("5.List peers response (encrypted): " + encryptListPeersResponse);
+					String payloadListPeersResponse = ClientServerMessages.genPayload(encryptListPeersResponse);
+					System.out.println("6.List peers response (payload): " + payloadListPeersResponse);
+					output.write(payloadListPeersResponse + "\n");
+			    	output.flush();
+					break;
+					
+				case ClientServerMessages.CONNECT_PEER_REQUEST:
+					int port = (int)request.getLong("port");
+					String connectPeerResponse = ClientServerMessages.genConnectPeerResponse(request.getString("host"),
+							port,Configuration.getConfigurationValue("mode"));
+					System.out.println("4. connect peer response (raw): " + connectPeerResponse + "\n");
+					String encryptConnectPeerResponse = encryption(secretKey, connectPeerResponse);
+					System.out.println("5.connect peer response (encrypted): " + encryptConnectPeerResponse);
+					String payloadConnectPeerResponse = ClientServerMessages.genPayload(encryptConnectPeerResponse);
+					System.out.println("6.connect peer response (payload): " + payloadConnectPeerResponse);
+					output.write(payloadConnectPeerResponse + "\n");
+			    	output.flush();
+					break;
+					
+				case ClientServerMessages.DISCONNECT_PEER_REQUEST:
+					port = (int) request.getLong("port");
+					String disconnectPeerResponse = ClientServerMessages.genDisconnectPeerResponse(request.getString("host"),
+							port, Configuration.getConfigurationValue(("mode")));
+					System.out.println("4.Disconnect peer response (raw): " + disconnectPeerResponse + "\n");
+					String encryptDisconnectPeersResponse = encryption(secretKey, disconnectPeerResponse);
+					System.out.println("5.Disconnect peer response (encrypted): " + encryptDisconnectPeersResponse);
+					String payloadDisconnectPeerResponse = ClientServerMessages.genPayload(encryptDisconnectPeersResponse);
+					System.out.println("6.Disconnect peer response (payload): " + payloadDisconnectPeerResponse);
+					output.write(payloadDisconnectPeerResponse + "\n");
+			    	output.flush();
+					break;
+					
+				default:
+					output.write("Invalid command!");
+					output.flush();
+					break;
 				}
-				String listPeersResponse = ClientServerMessages.genListPeersResponse(hostPorts);
-				System.out.println("4.List peers response (raw): " + listPeersResponse + "\n");
-				String encryptListPeersResponse = Encrypt(secretKey, listPeersResponse);
-				//String encryptListPeersResponse =encryption(secretKey, listPeersResponse);
-				System.out.println("5.List peers response (encrypted): " + encryptListPeersResponse);
-				String payloadListPeersResponse = ClientServerMessages.genPayload(encryptListPeersResponse);
-				System.out.println("6.List peers response (payload): " + payloadListPeersResponse);
-				output.write(payloadListPeersResponse + "\n");
-		    	output.flush();
-				break;
+			}catch(IOException e) {
+				System.out.println("Socket closed");
 				
-			case ClientServerMessages.CONNECT_PEER_REQUEST:
-				int port = (int)request.getLong("port");
-				String connectPeerResponse = ClientServerMessages.genConnectPeerResponse(request.getString("host"),
-						port,Configuration.getConfigurationValue("mode"));
-				System.out.println("4. connect peer response (raw): " + connectPeerResponse + "\n");
-				String encryptConnectPeerResponse = Encrypt(secretKey, connectPeerResponse);
-				//String encryptConnectPeerResponse = encryption(secretKey, connectPeerResponse);
-				System.out.println("5.connect peer response (encrypted): " + encryptConnectPeerResponse);
-				String payloadConnectPeerResponse = ClientServerMessages.genPayload(encryptConnectPeerResponse);
-				System.out.println("6.connect peer response (payload): " + payloadConnectPeerResponse);
-				output.write(payloadConnectPeerResponse + "\n");
-		    	output.flush();
-				break;
-				
-			case ClientServerMessages.DISCONNECT_PEER_REQUEST:
-				port = (int) request.getLong("port");
-				String disconnectPeerResponse = ClientServerMessages.genDisconnectPeerResponse(request.getString("host"),
-						port, Configuration.getConfigurationValue(("mode")));
-				System.out.println("4.Disconnect peer response (raw): " + disconnectPeerResponse + "\n");
-				String encryptDisconnectPeersResponse = Encrypt(secretKey, disconnectPeerResponse);
-				//String encryptDisconnectPeersResponse = encryption(secretKey, disconnectPeerResponse);
-				System.out.println("5.Disconnect peer response (encrypted): " + encryptDisconnectPeersResponse);
-				String payloadDisconnectPeerResponse = ClientServerMessages.genPayload(encryptDisconnectPeersResponse);
-				System.out.println("6.Disconnect peer response (payload): " + payloadDisconnectPeerResponse);
-				output.write(payloadDisconnectPeerResponse + "\n");
-		    	output.flush();
-				break;
-				
-			default:
-				output.write("Invalid command!");
-				output.flush();
-				break;
 			}
-		server.close();
 	}
 	
 	
 	private static byte[] generateSecretKey() {
-		/*try {
-			  // Generate a 128bit key
-			    final int outputKeyLength = 128;
-
-			    //SecureRandom secureRandom = new SecureRandom();
-			    SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
-			    // Do *not* seed secureRandom! Automatically seeded from system entropy.
-			    KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-			    keyGen.init(outputKeyLength, secureRandom);
-			    SecretKey secretKey = keyGen.generateKey();
-			    System.out.println(secretKey);
-			    return secretKey.getEncoded();
-			    
-		 } catch (NoSuchAlgorithmException e) {
-			   e.printStackTrace();
-			   return null;
-		}
-		KeyGenerator keyGenerator;*/
 		
 		KeyGenerator keyGen = null;
 		  try {
@@ -213,55 +193,6 @@ public class Server {
 	    }
 	 
 	 
-	 private static String Decrypt(byte[] secretKey, String payload) throws UnsupportedEncodingException {		 
-		 byte[] message = Base64.getDecoder().decode(payload);
-		 Key aesKey = new SecretKeySpec(secretKey, "AES");
-			
-		 
-			 	Cipher cipher;
-				try {
-					//Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-					cipher = Cipher.getInstance("AES/ECB/NoPadding");
-					cipher.init(Cipher.DECRYPT_MODE, aesKey);
-					byte[] decrypted = cipher.doFinal(message);	
-					String originalMessage = new String(decrypted, "UTF-8");//LOWERCASE?"utf-8"
-				    return originalMessage;
-					
-				} catch (NoSuchAlgorithmException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (NoSuchPaddingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}catch (InvalidKeyException e) {
-					e.printStackTrace();
-				} catch (IllegalBlockSizeException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (BadPaddingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-			return null;     
-	 }
-	 
-	 
-	 private static String Encrypt(byte[] secretKey, String message) {		 
-		 Key aesKey = new SecretKeySpec(secretKey, "AES");
-		 try {
-			//Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
-			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");			
-			cipher.init(Cipher.ENCRYPT_MODE, aesKey);			
-			byte[] encrypted = cipher.doFinal(message.getBytes("UTF-8"));//LOWERCASE?"utf-8"
-			return Base64.getEncoder().encodeToString(encrypted);	
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
-			return null;
-		} 
-		 	
-	 }
-
 	public static String encryption(byte[] keyBytes, String plainText) {
 
 		byte[] plaintTextByteArray = new byte[0];
