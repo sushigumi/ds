@@ -28,10 +28,13 @@ public class ServerMain implements FileSystemObserver {
 
 	public static final int MAX_RETRIES = Integer.parseInt(Configuration.getConfigurationValue("retries"));
 
-	private String mode; // TODO could change to enum?
+	private static String mode; // TODO could change to enum?
 
 	private static Logger log = Logger.getLogger(ServerMain.class.getName());
 	protected FileSystemManager fileSystemManager;
+
+	private TCPServerThread tcp = null;
+	private UDPServerThread udp = null;
 
 	private static HostPort localHostPort = null;
 
@@ -44,10 +47,12 @@ public class ServerMain implements FileSystemObserver {
 		// Set the local host ports and start the appropriate server
 		if (mode.equals(MODE_TCP)) {
 			setLocalHostPort(Integer.parseInt(Configuration.getConfigurationValue("port")));
-			new TCPServerThread(fileSystemManager).start();
+			tcp = new TCPServerThread(fileSystemManager);
+			tcp.start();
 		} else if (mode.equals(MODE_UDP)) {
 			setLocalHostPort(Integer.parseInt(Configuration.getConfigurationValue("udpPort")));
-			new UDPServerThread(fileSystemManager).start();
+			udp = new UDPServerThread(fileSystemManager);
+			udp.start();
 		}
 
 		// Invalid configuration
@@ -55,6 +60,14 @@ public class ServerMain implements FileSystemObserver {
 			log.severe("invalid server mode. please recheck configuration properties");
 			System.exit(1);
 		}
+	}
+
+	/**
+	 * Get the mode of the server
+	 * @return
+	 */
+	public static String getMode() {
+		return mode;
 	}
 
 	/**

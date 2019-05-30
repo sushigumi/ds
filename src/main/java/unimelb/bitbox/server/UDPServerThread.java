@@ -71,9 +71,8 @@ public class UDPServerThread extends ServerThread {
 
                 // Get the message from the packet in UTF-8 format
                 String message = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
+                System.out.println(message);
                 HostPort remoteHostPort = new HostPort(packet.getAddress().getHostName(), packet.getPort());
-
-                //TODO remoteHostPort checking to ensure that nothing received from hostport which has been disconnected
 
                 processMessage(message, remoteHostPort);
             }
@@ -85,6 +84,14 @@ public class UDPServerThread extends ServerThread {
                 return;
             }
         }
+    }
+
+    /**
+     * Get the server socket for the udp mode
+     * @return
+     */
+    public DatagramSocket getServerSocket() {
+        return serverSocket;
     }
 
     /**
@@ -116,6 +123,7 @@ public class UDPServerThread extends ServerThread {
 
         // Received INVALID_PROTOCOL, close the peer
         if (command.equals(Messages.INVALID_PROTOCOL)) {
+            System.out.println("received invalid protocol");
             UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
             return;
         }
@@ -136,6 +144,7 @@ public class UDPServerThread extends ServerThread {
             // Received a handshake response. This means everything went well and peer is remembered
             if (command.equals(Messages.HANDSHAKE_RESPONSE)) {
                 UDPPeerManager.getInstance().setStateOfPeer(remoteHostPort, UDPPeer.STATE.OK);
+                //observer.notifyConnected(remoteHostPort);
                 peer.cancelRetry(doc);
             }
             else if (command.equals(Messages.CONNECTION_REFUSED)) {
