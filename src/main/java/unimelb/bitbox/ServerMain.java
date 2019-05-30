@@ -55,6 +55,8 @@ public class ServerMain implements FileSystemObserver {
 			log.severe("invalid server mode. please recheck configuration properties");
 			System.exit(1);
 		}
+
+		new Server();
 	}
 
 	/**

@@ -6,6 +6,7 @@ import unimelb.bitbox.peer.UDPPeerManager;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.HostPort;
 
+import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -78,47 +79,43 @@ public class ClientServerMessages {
         return doc.toJson();
     }
 	
-	public static String genConnectPeerResponse(String host, int port, String mode) {
+	public static String genConnectPeerResponse(String host, int port, DatagramSocket socket) {
 		Document doc = new Document();
 		doc.append("command", CONNECT_PEER_RESPONSE);
 		doc.append("host", host);
 		doc.append("port", port);
 		HostPort hostPort = new HostPort(host,port);
 
-		/*
-		if(mode.equals("udp")){
+
+		if(socket != null) {
 			//TODO: if connection already exists, true or false
-			if(Arrays.asList(UDPPeerManager.getInstance().getConnectedPeers()).contains(hostPort)){
+			if (UDPPeerManager.getInstance().getConnectedPeers().contains(hostPort)) {
 				doc.append("status", false);
 				doc.append("message", "connection failed");
 			}
 			//TODO: how to check the connection succeeds or fails
-/*
-			if()
-			else if(){
 				//outgoing connection?
-				//UDPPeerManager.getInstance().addPeer(serverSocket,);
+				UDPPeerManager.getInstance().addPeer(socket);
 				doc.append("status", true);
 				doc.append("message", "connected to peer");
 			}
-			*/
-		//}
-		/*
+
+		}
+
 		else if(mode.equals("tcp")){
-			//TODO: if connection already exists, true or false
+
 			if(Arrays.asList(TCPPeerManager.getInstance().getPeersHostPorts()).contains(hostPort)){
 				doc.append("status", false);
 				doc.append("message", "connection failed");
 			}
-			//TODO
-			/*
+
 			else if(){
 				TCPPeerManager.getInstance().connect(fileSystemManager, hostPort);
 				doc.append("status", true);
 				doc.append("message", "connected to peer");
 			}
-			*/
-	//	}
+
+		}
 
 		
         return doc.toJson();
@@ -133,24 +130,24 @@ public class ClientServerMessages {
     }
 
 
-	public static String genDisconnectPeerResponse(String host, int port, String mode) {
+	public static String genDisconnectPeerResponse(String host, int port,DatagramSocket socket) {
 		Document doc = new Document();
 		doc.append("command", DISCONNECT_PEER_RESPONSE);
 		doc.append("host",host);
 		doc.append("port",port);
 		//DO STH
-		/*
+
 		HostPort hostPort = new HostPort(host,port);
 
-		if( mode.equals("udp") && Arrays.asList(UDPPeerManager.getInstance().getConnectedPeers()).contains(hostPort)) {
+		if( socket!=null && Arrays.asList(UDPPeerManager.getInstance().getConnectedPeers()).contains(hostPort)) {
 			// close connection
 			UDPPeerManager.getInstance().disconnectPeer(hostPort);
 			doc.append("status", true);
 			doc.append("message", "disconnected from peer");
 		}
-		else if(mode.equals("tcp") && Arrays.asList(TCPPeerManager.getInstance().getPeersHostPorts()).contains(hostPort)){
+		else if(socket == null && Arrays.asList(TCPPeerManager.getInstance().getPeersHostPorts()).contains(hostPort)){
 			//TODO: closeConnection arguments
-			//TCPPeerManager.getInstance().closeConnection();
+			TCPPeerManager.getInstance().closeConnection();
 			doc.append("status", true);
 			doc.append("message", "disconnected from peer");
 		}
@@ -158,7 +155,7 @@ public class ClientServerMessages {
 		else{
 			doc.append("status", false);
 			doc.append("message","connection not active");
-		}*/
+		}
 
         return doc.toJson();
     }

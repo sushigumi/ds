@@ -1,6 +1,7 @@
 package unimelb.bitbox;
 
 import java.io.*;
+import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -17,29 +18,36 @@ import unimelb.bitbox.peer.TCPPeerManager;
 import unimelb.bitbox.peer.UDPPeerManager;
 import unimelb.bitbox.util.Configuration;
 import unimelb.bitbox.util.Document;
+import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 public class Server {
+	private static DatagramSocket datagramSocket = null;
+	private FileSystemManager fileSystemManager;
 
-	public static void main(String[] args) {
-		
+	public Server(DatagramSocket datagramSocket, FileSystemManager fileSystemManager) {
+		this(fileSystemManager);
+		this.datagramSocket = datagramSocket;
+	}
+
+
+	public Server(FileSystemManager fileSystemManager){
+		this.fileSystemManager = fileSystemManager;
 		int portNumber = Integer.parseInt(Configuration.getConfigurationValue("clientPort"));
-		
 		try {
 			ServerSocket server = new ServerSocket(portNumber);
 			while(true) {
 				Socket client = server.accept();
-				
+
 				//Start a new thread for a connection
 				Thread t = new Thread(() -> serverClient(client, server));
 				t.start();
-			}					
-		} catch (IOException e) {	
+			}
+		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
-		}	
-
+		}
 	}
 	
 	
@@ -126,8 +134,9 @@ public class Server {
 					
 				case ClientServerMessages.CONNECT_PEER_REQUEST:
 					int port = (int)request.getLong("port");
+
 					String connectPeerResponse = ClientServerMessages.genConnectPeerResponse(request.getString("host"),
-							port,Configuration.getConfigurationValue("mode"));
+							port,datagramSocket);
 					System.out.println("4. connect peer response (raw): " + connectPeerResponse + "\n");
 					String encryptConnectPeerResponse = encryption(secretKey, connectPeerResponse);
 					System.out.println("5.connect peer response (encrypted): " + encryptConnectPeerResponse);
