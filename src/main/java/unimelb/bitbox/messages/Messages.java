@@ -170,11 +170,9 @@ public class Messages {
      * @return
      */
     public static ArrayList<String> genFileBytesRequests(Document fileDescriptor, String pathName) {
-        long blockSize;
-        if (ServerMain.getMode().equals(ServerMain.MODE_TCP)) {
-            blockSize = Long.parseLong(Configuration.getConfigurationValue("blockSize"));
-        } else {
-            blockSize = 8192;
+        long blockSize = Long.parseLong(Configuration.getConfigurationValue("blockSize"));
+        if (ServerMain.getMode().equals(ServerMain.MODE_UDP)) {
+            blockSize = blockSize < 8192 ? blockSize : 8192;
         }
 
         ArrayList<String> messages = new ArrayList<>();

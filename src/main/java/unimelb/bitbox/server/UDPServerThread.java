@@ -44,7 +44,7 @@ public class UDPServerThread extends ServerThread {
         blockSize = Integer.parseInt(Configuration.getConfigurationValue("blockSize"));
 
         // Set up a background thread to handle whatever incoming request received
-        this.backgroundExecutor = Executors.newSingleThreadExecutor();
+        this.backgroundExecutor = Executors.newFixedThreadPool(10);
     }
 
     /**
@@ -71,7 +71,7 @@ public class UDPServerThread extends ServerThread {
 
                 // Get the message from the packet in UTF-8 format
                 String message = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
-                System.out.println(message);
+                //System.out.println(message);
                 HostPort remoteHostPort = new HostPort(packet.getAddress().getHostName(), packet.getPort());
 
                 processMessage(message, remoteHostPort);
@@ -143,15 +143,16 @@ public class UDPServerThread extends ServerThread {
         else if (peerState == UDPPeer.STATE.HANDSHAKE) {
             // Received a handshake response. This means everything went well and peer is remembered
             if (command.equals(Messages.HANDSHAKE_RESPONSE)) {
+                peer.cancelRetry(doc);
                 UDPPeerManager.getInstance().setStateOfPeer(remoteHostPort, UDPPeer.STATE.OK);
                 //observer.notifyConnected(remoteHostPort);
-                peer.cancelRetry(doc);
             }
             else if (command.equals(Messages.CONNECTION_REFUSED)) {
                 // Get the other peers list
                 // Get the list of peers
                 Object o = doc.get("peers");
                 if (o instanceof ArrayList) {
+                    peer.cancelRetry(doc);
                     ArrayList<Document> peerDocs = (ArrayList) o;
 
                     // Convert documents to HostPorts
@@ -161,7 +162,6 @@ public class UDPServerThread extends ServerThread {
                     }
 
                     UDPPeerManager.getInstance().onConnectionRefused(remoteHostPort, otherPeers);
-                    peer.cancelRetry(doc);
                 } else {
                     // Send INVALID_PROTOCOL and close connection
                     backgroundExecutor.submit(new InvalidProtocol(serverSocket, remoteHostPort, InvalidProtocolType.CUSTOM, "invalid list of peers"));

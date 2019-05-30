@@ -70,7 +70,6 @@ public class MessageInfo {
         if (!command.equals(otherCommand)) return false;
 
         if (command.equals(Messages.HANDSHAKE_REQUEST)) {
-// TODO no wonder host port not wokring
             HostPort hostPort = new HostPort((Document) doc.get("hostPort"));
             HostPort otherHostPort = new HostPort((Document) other.get("hostPort"));
 

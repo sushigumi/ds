@@ -1,5 +1,6 @@
 package unimelb.bitbox.peer;
 
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.util.Configuration;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
@@ -73,7 +74,34 @@ public class UDPPeerManager {
 
         log.info("disconnected peer " + remoteHostPort.toString() + " due to inactivity");
 
-        System.out.println(rememberedPeers.size());
+        //System.out.println(rememberedPeers.size());
+    }
+
+    public void retryPeer(HostPort remoteHostPort) {
+        UDPPeer toRemove = null;
+
+        for (UDPPeer peer : rememberedPeers) {
+            if (peer.getRemoteHostPort().equals(remoteHostPort)) {
+                toRemove = peer;
+                break;
+            }
+        }
+
+        rememberedPeers.remove(toRemove);
+        nRememberedPeers--;
+
+        // Shutdown the threads
+        if (toRemove != null) toRemove.shutdown();
+
+        // TODO change to advertised host port
+        HostPort advertisedHostPort = toRemove.getRemoteHostPort();
+        DatagramSocket serverSocket = toRemove.getServerSocket();
+        FileSystemManager fileSystemManager = toRemove.getFileSystemManager();
+
+        log.info("disconnected to peer " + remoteHostPort.toString());
+        log.info("attempting to reconnect");
+
+        addPeer(serverSocket, remoteHostPort, fileSystemManager);
     }
 
     /**

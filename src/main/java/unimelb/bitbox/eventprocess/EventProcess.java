@@ -59,8 +59,8 @@ public abstract class EventProcess implements Runnable {
             } else if (mode.equals(ServerMain.MODE_UDP)) {
                 // Convert the message to a bytes buffer before sending to the other peer
                 message = message + "\n";
-                byte[] buf = message.getBytes();
-                System.out.println(buf.length);
+                //System.out.println("Sent: " + message);
+                byte[] buf = message.getBytes("UTF-8");
                 DatagramPacket packet = new DatagramPacket(buf, buf.length, InetAddress.getByName(hostPort.host), hostPort.port);
                 socket.send(packet);
 

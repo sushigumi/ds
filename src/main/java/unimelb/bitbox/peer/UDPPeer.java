@@ -68,6 +68,22 @@ public class UDPPeer {
     }
 
     /**
+     * Get the file system manager
+     * @return
+     */
+    public FileSystemManager getFileSystemManager() {
+        return fileSystemManager;
+    }
+
+    /**
+     * Get the server socket
+     * @return
+     */
+    public DatagramSocket getServerSocket() {
+        return serverSocket;
+    }
+
+    /**
      * Called when the UDP peer is offline
      */
     public void shutdown() {
@@ -98,7 +114,7 @@ public class UDPPeer {
                     info.updateFuture(retry.schedule(runnable, timeout, TimeUnit.SECONDS));
                 } else {
                     System.out.println(doc.toJson());
-                    UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
+                    UDPPeerManager.getInstance().retryPeer(remoteHostPort);
                 }
             }
         }
@@ -118,17 +134,18 @@ public class UDPPeer {
                 if (info.getCommand().equals(Messages.HANDSHAKE_REQUEST)) {
                     if (command.equals(Messages.HANDSHAKE_RESPONSE) || command.equals(Messages.CONNECTION_REFUSED)) {
                         toRemove = info;
+                        break;
                     }
-                } else if (info.getCommand().equals(Messages.DIRECTORY_CREATE_REQUEST) || info.getCommand().equals(Messages.DIRECTORY_DELETE_REQUEST)) {
-                    if (!command.equals(Messages.DIRECTORY_CREATE_RESPONSE) && !command.equals(Messages.DIRECTORY_DELETE_RESPONSE))
-                        continue;
-                    String pathName = doc.getString("pathName");
-                    String otherPathName = info.getDoc().getString("pathName");
+                }
+                else if (info.getCommand().equals(Messages.DIRECTORY_CREATE_REQUEST)) {
+                    if (!command.equals(Messages.DIRECTORY_CREATE_RESPONSE)) continue;
 
-                    if (pathName.equals(otherPathName)) {
+                    if (info.getDoc().getString("pathName").equals(doc.getString("pathName"))) {
                         toRemove = info;
+                        break;
                     }
-                } else {
+                }
+                else {
                     if (info.getCommand().equals(Messages.FILE_BYTES_REQUEST)) {
                         if (!command.equals(Messages.FILE_BYTES_RESPONSE)) continue;
 
@@ -159,6 +176,7 @@ public class UDPPeer {
                     }
 
                     toRemove = info;
+                    break;
                 }
             }
         }
@@ -168,7 +186,7 @@ public class UDPPeer {
         if (index < 0) return;
 
         MessageInfo info = messagesSent.remove(index);
-        info.getFuture().cancel(false);
+        info.getFuture().cancel(true);
     }
 
     /**
