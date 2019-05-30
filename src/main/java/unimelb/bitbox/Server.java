@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -66,31 +67,16 @@ public class Server {
 	        			if(key.contains(identity)){
 	        				ifFound = true;
 	        				secretKey = generateSecretKey();
-	        				//maybe wrong?
-	        				String[] keyElement = key.split(" ");
-	        				//byte[] publicKey = keyElement[1].getBytes("UTF-8");
-	        				System.out.println("Read public key: " + key);
-	        				
-	        				String keyTest = "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAwyl1KXKUMS3+VnxL22Oq" + 
-	        						"7RDrmCHzF4dZWWYeP6Np145bYLog+HkieFhDrjI5H0m0Gq8YpAjKvvsSGjrFwpUU" + 
-	        						"+nukBEW/d2dgczYPL3tgR0fPiIEiJgsS2ComN1GFNHT3mNXc389CbxWnOVPSmP0Q" + 
-	        						"Ze2SIloc1h+O74+rSQu1UbO3fn5XzCFYuDCmlLCjlcXUrdOxWVZo4UyN7LbO1coW" + 
-	        						"qXWb/RbdrRjk4cSUR3LidiVM/RqfBORep8esB1hIG1kW5F4gnLXbt0fvSB3HsLwL" + 
-	        						"PbK0byRSdG6jmgAioFgaPrM8Dhf7J9F6OeF4dIKl7X5tPq2WiSZDHBj8l0HqWtnF" + 
-	        						"ZpfIcolMj2KNQDLDL+rTticX2dU831JiPt+ZNKUiji33H39mckJU3Z14QamBLmcT" + 
-	        						"OHUrAgwA5/P5Ym6AXQFCEyl9+T2eBqQyKhGHEzPHv9fsPVBDAirzHICPq5QmKq/u" + 
-	        						"LQN5S4Uiygi8xsIq4Ax+R1XW5MPj28PqI/NZUWGNl1mKusycZ1sa2gDacTN+TDhU" + 
-	        						"wB6XY7k32g7Eg4Jvi3HrD9tSF72tcKQRRXzVqLKTTfqENBNQL3VJCETbD28sU01C" + 
-	        						"1IqIWIULapzJmwB/38kTuKmotVk17vDMSMLI4W2a9IQJwPlcIwDgUtbS1x48ay0D" + 
-	        						"W4cm8m1I09w2qjKzcwaaZPMCAwEAAQ==";
-	        				
-	        				byte[] publicKey = Base64.getDecoder().decode((keyTest.getBytes()));
-	        				
+
+	        				byte[] publicKeyBytes = key.getBytes();
+	        				RSAPublicKeySpec publicKey =  KeyTransformation.decodeOpenSSH(publicKeyBytes);
 	        				String message = EncryptSecretKey(publicKey, secretKey);
+	        				
 	            			String authResponse = ClientServerMessages.genAuthResponse(message);
 	            			System.out.println("2. auth response sent: " + authResponse + "\n");
 	        		        output.write(authResponse + "\n");
 	        		    	output.flush();
+	        		    	break;
 	        				
 	        			}
 	        		}
@@ -105,8 +91,8 @@ public class Server {
 	            if (doc.containsKey("payload")) {
 	            	
 	            	String payload = doc.getString("payload");
-	            	//String requestString = Decrypt(secretKey, payload);
-					String requestString = decryption(secretKey,payload);
+	            	String requestString = Decrypt(secretKey, payload);
+					//String requestString = decryption(secretKey,payload);
 	            	System.out.println("3. command request received: " + requestString + "\n");
 	            	Document request = Document.parse(requestString);
 	            	ParseRequest(output, request, secretKey, server);
@@ -132,8 +118,8 @@ public class Server {
 				}
 				String listPeersResponse = ClientServerMessages.genListPeersResponse(hostPorts);
 				System.out.println("4.List peers response (raw): " + listPeersResponse + "\n");
-				//String encryptListPeersResponse = Encrypt(secretKey, listPeersResponse);
-				String encryptListPeersResponse =encryption(secretKey, listPeersResponse);
+				String encryptListPeersResponse = Encrypt(secretKey, listPeersResponse);
+				//String encryptListPeersResponse =encryption(secretKey, listPeersResponse);
 				System.out.println("5.List peers response (encrypted): " + encryptListPeersResponse);
 				String payloadListPeersResponse = ClientServerMessages.genPayload(encryptListPeersResponse);
 				System.out.println("6.List peers response (payload): " + payloadListPeersResponse);
@@ -146,8 +132,8 @@ public class Server {
 				String connectPeerResponse = ClientServerMessages.genConnectPeerResponse(request.getString("host"),
 						port,Configuration.getConfigurationValue("mode"));
 				System.out.println("4. connect peer response (raw): " + connectPeerResponse + "\n");
-				//String encryptConnectPeerResponse = Encrypt(secretKey, connectPeerResponse);
-				String encryptConnectPeerResponse = encryption(secretKey, connectPeerResponse);
+				String encryptConnectPeerResponse = Encrypt(secretKey, connectPeerResponse);
+				//String encryptConnectPeerResponse = encryption(secretKey, connectPeerResponse);
 				System.out.println("5.connect peer response (encrypted): " + encryptConnectPeerResponse);
 				String payloadConnectPeerResponse = ClientServerMessages.genPayload(encryptConnectPeerResponse);
 				System.out.println("6.connect peer response (payload): " + payloadConnectPeerResponse);
@@ -160,8 +146,8 @@ public class Server {
 				String disconnectPeerResponse = ClientServerMessages.genDisconnectPeerResponse(request.getString("host"),
 						port, Configuration.getConfigurationValue(("mode")));
 				System.out.println("4.Disconnect peer response (raw): " + disconnectPeerResponse + "\n");
-				//String encryptDisconnectPeersResponse = Encrypt(secretKey, disconnectPeerResponse);
-				String encryptDisconnectPeersResponse = encryption(secretKey, disconnectPeerResponse);
+				String encryptDisconnectPeersResponse = Encrypt(secretKey, disconnectPeerResponse);
+				//String encryptDisconnectPeersResponse = encryption(secretKey, disconnectPeerResponse);
 				System.out.println("5.Disconnect peer response (encrypted): " + encryptDisconnectPeersResponse);
 				String payloadDisconnectPeerResponse = ClientServerMessages.genPayload(encryptDisconnectPeersResponse);
 				System.out.println("6.Disconnect peer response (payload): " + payloadDisconnectPeerResponse);
@@ -217,9 +203,9 @@ public class Server {
 	} 
 	
 	
-	 private static String EncryptSecretKey(byte[] publicKey, byte[] secretKey)
+	 private static String EncryptSecretKey(RSAPublicKeySpec publicKey, byte[] secretKey)
 	            throws Exception {
-	        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publicKey));
+		 	PublicKey key = KeyFactory.getInstance("RSA").generatePublic(publicKey);
 	        Cipher cipher = Cipher.getInstance("RSA");
 	        cipher.init(Cipher.ENCRYPT_MODE, key);
 	        byte[] encryptedBytes = cipher.doFinal(secretKey);
@@ -227,29 +213,45 @@ public class Server {
 	    }
 	 
 	 
-	 private static String Decrypt(byte[] secretKey, String payload) {		 
+	 private static String Decrypt(byte[] secretKey, String payload) throws UnsupportedEncodingException {		 
 		 byte[] message = Base64.getDecoder().decode(payload);
 		 Key aesKey = new SecretKeySpec(secretKey, "AES");
 			
-		 try {
-			 	Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
-				//Cipher cipher = Cipher.getInstance("AES");			
-				cipher.init(Cipher.DECRYPT_MODE, aesKey);
-				byte[] decrypted = cipher.doFinal(message);	
-				String originalMessage = new String(decrypted, "UTF-8");//LOWERCASE?"utf-8"
-			    return originalMessage;
-			 } catch (Exception e) {
-		         System.out.println(e.toString());
-		         return null;
-		     }
+		 
+			 	Cipher cipher;
+				try {
+					//Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+					cipher = Cipher.getInstance("AES/ECB/NoPadding");
+					cipher.init(Cipher.DECRYPT_MODE, aesKey);
+					byte[] decrypted = cipher.doFinal(message);	
+					String originalMessage = new String(decrypted, "UTF-8");//LOWERCASE?"utf-8"
+				    return originalMessage;
+					
+				} catch (NoSuchAlgorithmException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (NoSuchPaddingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}catch (InvalidKeyException e) {
+					e.printStackTrace();
+				} catch (IllegalBlockSizeException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (BadPaddingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			return null;     
 	 }
 	 
 	 
 	 private static String Encrypt(byte[] secretKey, String message) {		 
 		 Key aesKey = new SecretKeySpec(secretKey, "AES");
 		 try {
-			Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
-			//Cipher cipher = Cipher.getInstance("AES");			
+			//Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");			
 			cipher.init(Cipher.ENCRYPT_MODE, aesKey);			
 			byte[] encrypted = cipher.doFinal(message.getBytes("UTF-8"));//LOWERCASE?"utf-8"
 			return Base64.getEncoder().encodeToString(encrypted);	

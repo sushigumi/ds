@@ -105,8 +105,8 @@ public class Client {
 		
 			case "list_peers":	
 				String listPeersRequest = ClientServerMessages.genListPeersRequest();			
-				//String encryptListPeerRequest = Encrypt(secretKey, listPeersRequest);
-				String encryptListPeerRequest = encryption(secretKey, listPeersRequest);
+				String encryptListPeerRequest = Encrypt(secretKey, listPeersRequest);
+				//String encryptListPeerRequest = encryption(secretKey, listPeersRequest);
 				String payloadListPeerRequest = ClientServerMessages.genPayload(encryptListPeerRequest);
 				output.write(payloadListPeerRequest + "\n");
 				System.out.println("3.send list peer request: " + payloadListPeerRequest);
@@ -117,8 +117,8 @@ public class Client {
 			case "connect_peer":
 				HostPort connectPeerHostPort = new HostPort(argsCommand.getPeerHostPort());
 				String connectPeerRequest = ClientServerMessages.genConnectPeerRequest(connectPeerHostPort);			
-				//String encryptConnectPeerRequest = Encrypt(secretKey, connectPeerRequest);
-				String encryptConnectPeerRequest = encryption(secretKey, connectPeerRequest);
+				String encryptConnectPeerRequest = Encrypt(secretKey, connectPeerRequest);
+				//String encryptConnectPeerRequest = encryption(secretKey, connectPeerRequest);
 				String payloadConnectPeerRequest = ClientServerMessages.genPayload(encryptConnectPeerRequest);
 				System.out.println("3. connect request:" + payloadConnectPeerRequest + "\n");
 				output.write(payloadConnectPeerRequest + "\n");
@@ -129,8 +129,8 @@ public class Client {
 			case "disconnect_peer":
 				HostPort disconPeerHostPort = new HostPort(argsCommand.getPeerHostPort());
 				String disconnectPeerRequest = ClientServerMessages.genDisconnectPeerRequest(disconPeerHostPort);			
-				//String encryptdisconnectPeerRequest = Encrypt(secretKey, disconnectPeerRequest);
-				String encryptdisconnectPeerRequest = encryption(secretKey, disconnectPeerRequest);
+				String encryptdisconnectPeerRequest = Encrypt(secretKey, disconnectPeerRequest);
+				//String encryptdisconnectPeerRequest = encryption(secretKey, disconnectPeerRequest);
 				String payloaddisconnectPeerRequest = ClientServerMessages.genPayload(encryptdisconnectPeerRequest);				
 				output.write(payloaddisconnectPeerRequest + "\n");
 		    	output.flush();
@@ -176,8 +176,9 @@ public class Client {
 		 Key aesKey = new SecretKeySpec(secretKey, "AES");
 		 try {
 			Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
-			//Cipher cipher = Cipher.getInstance("AES");			
-			cipher.init(Cipher.ENCRYPT_MODE, aesKey);			
+			//Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");			
+			cipher.init(Cipher.ENCRYPT_MODE, aesKey);
+			System.out.println(message.getBytes("UTF-8").length);
 			byte[] encrypted = cipher.doFinal(message.getBytes("UTF-8"));//LOWERCASE?"utf-8"
 		    
 			return Base64.getEncoder().encodeToString(encrypted);	
