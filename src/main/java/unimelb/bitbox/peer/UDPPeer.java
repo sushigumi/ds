@@ -9,6 +9,7 @@ import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
+import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -34,6 +35,8 @@ public class UDPPeer {
     private ScheduledExecutorService retry;
     private int timeout;
 
+    private boolean isActive;
+
     MessageDigest messageDigest;
 
     private STATE state;
@@ -52,13 +55,15 @@ public class UDPPeer {
         this.remoteHostPort = null;
         this.fileSystemManager = fileSystemManager;
         sender = Executors.newSingleThreadExecutor();
-        retry = Executors.newScheduledThreadPool(1);
+        retry = Executors.newScheduledThreadPool(5);
 
         try {
             messageDigest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
             log.severe("error getting hash function");
         }
+
+        this.isActive = true;
 
         // Add the host port to the queue
         queue = new ArrayList<>();
@@ -135,21 +140,56 @@ public class UDPPeer {
             }
             if (futures.containsKey(msg)) {
                 Pair pair = futures.get(msg);
-                pair.future.cancel(true);
-                if (!pair.isExceedLimit()) {
-                    pair.future = retry.schedule(runnable, timeout, TimeUnit.SECONDS);
+                pair.future.cancel(false);
+
+//            if (command.equals(Messages.FILE_BYTES_REQUEST)) {
+//                //System.out.println(pair.retries);
+//            }
+                // If the message is a file bytes request, we keep asking for the packet
+                // Since a cancel of file loader, would result in a big overhead of packet transfer later
+                // and killing the peer becuase of this is a bad chocie
+                if (command.equals(Messages.FILE_BYTES_REQUEST)) {
+                    pair.future = retry.schedule(runnable, timeout, TimeUnit.MILLISECONDS);
+                }
+                else if (!pair.isExceedLimit()) {
+                    pair.future = retry.schedule(runnable, timeout, TimeUnit.MILLISECONDS);
                     pair.incRetries();
                 }else {
                     System.out.println(doc.toJson());
-                    log.info("timeout reached");
-                    futures.remove(msg);
-                    close();
+                    Pair removed = futures.remove(msg);
+                    removed.future.cancel(false);
+                    isActive = false;
+                    // Maybe can cancel file loader?
+
+                    // Here comes the fun part.
+                    // Sleep the thread for 5 seconds, if there is another packet, then isActive will be
+                    // set to true and we know that the peer is still alive
+//                    try {
+//                        Thread.sleep(Integer.parseInt(Configuration.getConfigurationValue("syncInterval")) * 1000);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                        log.info("thread interrupted");
+//                    }
+//
+//                    if (!isActive) {
+//                        log.info("timeout reached");
+//                        System.out.println("after n retries: " + removed.retries);
+//                        close();
+//                    }
                 }
 
             }else {
-                futures.put(msg, new Pair(retry.schedule(runnable, timeout, TimeUnit.SECONDS)));
+                futures.put(msg, new Pair(retry.schedule(runnable, timeout, TimeUnit.MILLISECONDS)));
             }
         }
+    }
+
+    /**
+     * Set whether the peer is still receiving packets
+     * @return
+     */
+    public void setActive() {
+        this.isActive = true;
     }
 
     /**
@@ -171,14 +211,14 @@ public class UDPPeer {
             Document fd = (Document) doc.get("fileDescriptor");
             String pathName = doc.getString("pathName");
 
-            String commandToDigest = null;
+            String commandToDigest;
             if (command.equals(Messages.FILE_DELETE_RESPONSE)) {
                 commandToDigest = Messages.FILE_DELETE_REQUEST;
             }
             else if (command.equals(Messages.FILE_MODIFY_RESPONSE)) {
                 commandToDigest = Messages.FILE_MODIFY_REQUEST;
             }
-            else if (command.equals(Messages.FILE_CREATE_RESPONSE)) {
+            else {
                 commandToDigest = Messages.FILE_CREATE_REQUEST;
             }
 
@@ -191,11 +231,8 @@ public class UDPPeer {
             if (command.equals(Messages.DIRECTORY_CREATE_RESPONSE)) {
                 commandToDigest = Messages.DIRECTORY_CREATE_REQUEST;
             }
-            else if (command.equals(Messages.DIRECTORY_DELETE_RESPONSE)) {
-                commandToDigest = Messages.DIRECTORY_DELETE_REQUEST;
-            }
             else {
-                commandToDigest = null;
+                commandToDigest = Messages.DIRECTORY_DELETE_REQUEST;
             }
 
             msg = commandToDigest + pathName;
@@ -205,6 +242,7 @@ public class UDPPeer {
             String pathName = doc.getString("pathName");
             long length = doc.getLong("length");
             long position = doc.getLong("position");
+
 
             msg = Messages.FILE_BYTES_REQUEST + fd.toJson() + pathName + position + length;
         }
@@ -216,7 +254,7 @@ public class UDPPeer {
         if (msg != null) {
             Pair pair = futures.remove(msg);
             if (pair != null) {
-                pair.future.cancel(true);
+                pair.future.cancel(false);
             }
         }
     }
@@ -284,7 +322,7 @@ public class UDPPeer {
 
 
             // Generate the sync events
-            //syncEvents();
+            syncEvents();
         }
         // Send CONNECTION_REFUSED
         else {

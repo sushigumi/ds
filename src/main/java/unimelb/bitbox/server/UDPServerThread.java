@@ -48,7 +48,7 @@ public class UDPServerThread extends ServerThread {
         blockSize = Integer.parseInt(Configuration.getConfigurationValue("blockSize"));
 
         // Set up a background thread to handle whatever incoming request received
-        this.backgroundExecutor = Executors.newFixedThreadPool(5);
+        this.backgroundExecutor = Executors.newSingleThreadExecutor();
         this.process = Executors.newFixedThreadPool(5);
     }
 
@@ -153,6 +153,11 @@ public class UDPServerThread extends ServerThread {
                 return;
             }
 
+            // The peer has received a packet, so it is not offline yet
+            if (peer != null) {
+                peer.setActive();
+            }
+
             // Peer does not exist, so can only accept HANDSHAKE_REQUEST
             if (peerState == null) {
                 if (command.equals(Messages.HANDSHAKE_REQUEST)) {
@@ -217,7 +222,7 @@ public class UDPServerThread extends ServerThread {
                         process.submit(new InvalidProtocol(serverSocket, remoteHostPort, InvalidProtocolType.MISSING_FIELD));
                         UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
                     } else {
-                        process.submit(new FileCreateResponse(serverSocket, remoteHostPort, doc, fileSystemManager));
+                        process.submit(new FileCreateResponse(serverSocket, remoteHostPort, peer, doc, fileSystemManager));
                     }
                 } else if (command.equals(Messages.FILE_CREATE_RESPONSE)) {
                     String createResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);
@@ -247,7 +252,7 @@ public class UDPServerThread extends ServerThread {
                         process.submit(new InvalidProtocol(serverSocket, remoteHostPort, InvalidProtocolType.MISSING_FIELD, modifyRequest));
                         UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
                     } else {
-                        process.submit(new FileModifyResponse(serverSocket, remoteHostPort, doc, fileSystemManager));
+                        process.submit(new FileModifyResponse(serverSocket, remoteHostPort, peer, doc, fileSystemManager));
                     }
                 } else if (command.equals(Messages.FILE_MODIFY_RESPONSE)) {
                     String modifyResponse = MessageValidator.getInstance().validateFileChangeResponse(doc);

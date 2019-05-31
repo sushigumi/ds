@@ -157,6 +157,9 @@ public class UDPPeerManager {
      */
     public UDPPeer.STATE getStateOfPeer(HostPort remoteHostPort) {
         for (UDPPeer peer : rememberedPeers) {
+            if (peer.getRemoteHostPort() == null) {
+                continue;
+            }
             if (cmpHostPorts(peer.getRemoteHostPort(), remoteHostPort)) {
                 return peer.getState();
             }
