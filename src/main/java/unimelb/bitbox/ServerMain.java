@@ -49,10 +49,12 @@ public class ServerMain implements FileSystemObserver {
 			setLocalHostPort(Integer.parseInt(Configuration.getConfigurationValue("port")));
 			tcp = new TCPServerThread(fileSystemManager);
 			tcp.start();
+			new Server(fileSystemManager);
 		} else if (mode.equals(MODE_UDP)) {
 			setLocalHostPort(Integer.parseInt(Configuration.getConfigurationValue("udpPort")));
 			udp = new UDPServerThread(fileSystemManager);
 			udp.start();
+			new Server(udp.getServerSocket(),fileSystemManager);
 		}
 
 		// Invalid configuration
@@ -60,7 +62,7 @@ public class ServerMain implements FileSystemObserver {
 			log.severe("invalid server mode. please recheck configuration properties");
 			System.exit(1);
 		}
-		new Server(fileSystemManager);
+
 	}
 
 	/**
