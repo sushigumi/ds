@@ -25,7 +25,7 @@ import unimelb.bitbox.util.HostPort;
 
 public class Server {
 	private static DatagramSocket datagramSocket = null;
-	private FileSystemManager fileSystemManager;
+	private static FileSystemManager fileSystemManager;
 
 	public Server(DatagramSocket datagramSocket, FileSystemManager fileSystemManager) {
 		this(fileSystemManager);
@@ -143,6 +143,7 @@ public class Server {
 					String connectPeerResponse;
 					while (true) {
 						if (ServerMain.getMode().equals(ServerMain.MODE_UDP)) {
+							UDPPeerManager.getInstance().addPeer(datagramSocket,remoteHostPort.toString(),fileSystemManager);
 							UDPPeer.STATE state = UDPPeerManager.getInstance().getStateByAdvertisedHostPort(remoteHostPort);
 
 							if (state == UDPPeer.STATE.OK) {
@@ -155,6 +156,7 @@ public class Server {
 							}
 						}
 						else if (ServerMain.getMode().equals(ServerMain.MODE_TCP)) {
+							TCPPeerManager.getInstance().connect(fileSystemManager,remoteHostPort.toString());
 							Connection.STATE state = TCPPeerManager.getInstance().getPeerState(remoteHostPort);
 							if (state == Connection.STATE.OK) {
 								connectPeerResponse = ClientServerMessages.genConnectPeerResponseSuccess(hostname, port, datagramSocket);

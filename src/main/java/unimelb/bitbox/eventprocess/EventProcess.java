@@ -61,11 +61,11 @@ public abstract class EventProcess implements Runnable {
                 // Convert the message to a bytes buffer before sending to the other peer
                 message = message + "\n";
                 byte[] buf = message.getBytes("UTF-8");
-                System.out.println(message);
+                //System.out.println(message);
                 DatagramPacket packet = new DatagramPacket(buf, buf.length, InetAddress.getByName(hostPort.host), hostPort.port);
 //                System.out.println(packet.getLength());
 //                System.out.println(new String(packet.getData()));
-                System.out.println(packet.getAddress() + "," + packet.getPort());
+                //System.out.println(packet.getAddress() + "," + packet.getPort());
                 socket.send(packet);
 
                 // Insert a retry only for requests sent
