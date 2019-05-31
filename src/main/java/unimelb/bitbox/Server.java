@@ -24,17 +24,24 @@ import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 public class Server {
-	private static DatagramSocket datagramSocket = null;
-	private static FileSystemManager fileSystemManager;
+	private DatagramSocket datagramSocket = null;
+	private FileSystemManager fileSystemManager;
 
 	public Server(DatagramSocket datagramSocket, FileSystemManager fileSystemManager) {
-		this(fileSystemManager);
+		this.fileSystemManager = fileSystemManager;
 		this.datagramSocket = datagramSocket;
+
+		startServer();
 	}
 
 
 	public Server(FileSystemManager fileSystemManager){
 		this.fileSystemManager = fileSystemManager;
+
+		startServer();
+	}
+
+	private void startServer() {
 		int portNumber = Integer.parseInt(Configuration.getConfigurationValue("clientPort"));
 		try {
 			ServerSocket server = new ServerSocket(portNumber);
@@ -53,7 +60,7 @@ public class Server {
 	}
 	
 	
-	private static void serverClient(Socket client, ServerSocket server) {
+	private void serverClient(Socket client, ServerSocket server) {
 		try(Socket clientSocket = client){
 			BufferedReader input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
 			BufferedWriter output = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"));
@@ -112,7 +119,7 @@ public class Server {
 	}
 	
 	
-	private static void ParseRequest(BufferedWriter output, Document request, byte[] secretKey, ServerSocket server){
+	private void ParseRequest(BufferedWriter output, Document request, byte[] secretKey, ServerSocket server){
 		try {
 			switch(request.getString("command")){
 			
@@ -207,7 +214,7 @@ public class Server {
 	}
 	
 	
-	private static byte[] generateSecretKey() {
+	private byte[] generateSecretKey() {
 		
 		KeyGenerator keyGen = null;
 		  try {
@@ -228,7 +235,7 @@ public class Server {
 	} 
 	
 	
-	 private static String EncryptSecretKey(RSAPublicKeySpec publicKey, byte[] secretKey)
+	 private String EncryptSecretKey(RSAPublicKeySpec publicKey, byte[] secretKey)
 	            throws Exception {
 		 	PublicKey key = KeyFactory.getInstance("RSA").generatePublic(publicKey);
 	        Cipher cipher = Cipher.getInstance("RSA");
@@ -238,7 +245,7 @@ public class Server {
 	    }
 	 
 	 
-	public static String encryption(byte[] keyBytes, String plainText) {
+	public String encryption(byte[] keyBytes, String plainText) {
 
 		byte[] plaintTextByteArray = new byte[0];
 		try {
@@ -279,7 +286,7 @@ public class Server {
 		return Base64.getEncoder().encodeToString(byteBuffer.array());
 	}
 
-	public static String decryption(byte[] keyBytes, String ciphermessage) {
+	public String decryption(byte[] keyBytes, String ciphermessage) {
 
 		byte[] cipherMessage = Base64.getDecoder().decode(ciphermessage);
 		try {
