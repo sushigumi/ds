@@ -18,7 +18,10 @@ public class CmdLineArgs {
 
 	@Option(required = false, name = "-p", usage = "HostPort")
 	private String peerhostport;
-	
+
+	@Option(required = true, name = "-i", usage = "identity")
+	private String identity;
+
 	public String getCommandName() {
 		return commandname;
 	}
@@ -29,6 +32,10 @@ public class CmdLineArgs {
 
 	public String getPeerHostPort() {
 		return peerhostport;
+	}
+
+	public String getIdentity() {
+		return identity;
 	}
 	
 }

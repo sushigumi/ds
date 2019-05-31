@@ -33,11 +33,11 @@ public class ClientServerMessages {
 	}
 	
 	
-	public static String genAuthRequest() {
+	public static String genAuthRequest(String identity) {
 		Document doc = new Document();
         doc.append("command", AUTH_REQUEST);
         //identity should be variable
-        doc.append("identity", "yanli@Yans-MacBook-Pro.local");
+        doc.append("identity", identity);
         return doc.toJson();
     }
 	

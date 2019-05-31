@@ -40,9 +40,6 @@ public class Client {
 			//what if the input argument is invalid, e.g., it should be ip:port, actually it is a bunch of characters
 			HostPort serverHostPort = new HostPort(argsCommand.getServerHostPort());
 			
-			System.out.print(serverHostPort.host instanceof String);
-			System.out.println(serverHostPort.port);
-			
 			try (Socket socket = new Socket(serverHostPort.host, serverHostPort.port);){
 
 				
@@ -51,7 +48,7 @@ public class Client {
 
 			    
 		    	//ask to be authorized
-				String authRequest = ClientServerMessages.genAuthRequest();
+				String authRequest = ClientServerMessages.genAuthRequest(argsCommand.getIdentity());
 				System.out.print("1.authRequest sent: " + authRequest + "\n");
 		        output.write(authRequest + "\n");
 		    	output.flush();
@@ -96,7 +93,7 @@ public class Client {
 		switch(argsCommand.getCommandName()){
 		
 			case "list_peers":	
-				String listPeersRequest = ClientServerMessages.genListPeersRequest();			
+				String listPeersRequest = ClientServerMessages.genListPeersRequest();
 				String encryptListPeerRequest = encryption(secretKey, listPeersRequest);
 				String payloadListPeerRequest = ClientServerMessages.genPayload(encryptListPeerRequest);
 				output.write(payloadListPeerRequest + "\n");
