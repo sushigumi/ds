@@ -115,6 +115,7 @@ public class ClientServerMessages {
 		doc.append("host",host);
 		doc.append("port",port);
 		HostPort hostPort = new HostPort(host,port);
+		System.out.println(socket + ","+ UDPPeerManager.getInstance().getConnectedPeers().contains(hostPort));
 		if( socket!=null && UDPPeerManager.getInstance().getConnectedPeers().contains(hostPort)) {
 			// close connection
 			UDPPeerManager.getInstance().disconnectPeer(hostPort);

@@ -27,14 +27,13 @@ public class Server {
 	private static DatagramSocket datagramSocket = null;
 	private static FileSystemManager fileSystemManager;
 
-	public Server(DatagramSocket datagramSocket, FileSystemManager fileSystemManager) {
-		this(fileSystemManager);
-		this.datagramSocket = datagramSocket;
-	}
-
-
-	public Server(FileSystemManager fileSystemManager){
-		this.fileSystemManager = fileSystemManager;
+	public Server(DatagramSocket socket, FileSystemManager fileSystemManager) {
+		   this(fileSystemManager);
+		   datagramSocket = socket;
+		}
+	
+	public Server(FileSystemManager fsm){
+		fileSystemManager = fsm;
 		int portNumber = Integer.parseInt(Configuration.getConfigurationValue("clientPort"));
 		try {
 			ServerSocket server = new ServerSocket(portNumber);
@@ -141,6 +140,13 @@ public class Server {
 					HostPort remoteHostPort = new HostPort(hostname, port);
 
 					String connectPeerResponse;
+					
+					if (ServerMain.getMode().equals(ServerMain.MODE_UDP)) {
+						UDPPeerManager.getInstance().addPeer(datagramSocket,remoteHostPort.toString(),fileSystemManager);
+					}else {
+						TCPPeerManager.getInstance().connect(fileSystemManager,remoteHostPort.toString());
+					}
+					
 					try {
 						Thread.sleep(3000);
 					} catch (InterruptedException e) {
@@ -148,7 +154,7 @@ public class Server {
 					}
 					while (true) {
 						if (ServerMain.getMode().equals(ServerMain.MODE_UDP)) {
-							UDPPeerManager.getInstance().addPeer(datagramSocket,remoteHostPort.toString(),fileSystemManager);
+							
 							UDPPeer.STATE state = UDPPeerManager.getInstance().getStateByAdvertisedHostPort(remoteHostPort);
 
 							if (state == UDPPeer.STATE.OK) {
@@ -161,7 +167,7 @@ public class Server {
 							}
 						}
 						else if (ServerMain.getMode().equals(ServerMain.MODE_TCP)) {
-							TCPPeerManager.getInstance().connect(fileSystemManager,remoteHostPort.toString());
+							
 							Connection.STATE state = TCPPeerManager.getInstance().getPeerState(remoteHostPort);
 							if (state == Connection.STATE.OK) {
 								connectPeerResponse = ClientServerMessages.genConnectPeerResponseSuccess(hostname, port);

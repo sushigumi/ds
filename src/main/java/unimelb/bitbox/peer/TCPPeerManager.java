@@ -115,6 +115,9 @@ public class TCPPeerManager implements ConnectionObserver {
      */
     public Connection.STATE getPeerState(HostPort remoteHostPort) {
         for (Connection peer: peers) {
+        	if (peer.remoteHostPort == null) {
+            	continue;
+            }
             if (peer.remoteHostPort.equals(remoteHostPort)) {
                 return peer.getState();
             }

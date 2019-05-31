@@ -112,7 +112,10 @@ public class UDPPeerManager {
 
     public UDPPeer.STATE getStateByAdvertisedHostPort(HostPort aHostPort) {
         for (UDPPeer peer: rememberedPeers) {
-            if (peer.getAdvertisedHostPort().equals(aHostPort)) {
+            if(peer.getAdvertisedHostPort() == null) {
+            	continue;
+            }
+        	if (peer.getAdvertisedHostPort().equals(aHostPort)) {
                 return peer.getState();
             }
         }
