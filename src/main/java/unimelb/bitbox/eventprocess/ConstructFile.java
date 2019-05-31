@@ -48,11 +48,11 @@ public class ConstructFile extends EventProcess {
 
         // Status is false. So something must have happened reading the file. So we need
         // to request for the file again
-        if (!status) {
-            Document fileDescriptor = (Document) fileBytesResponse.get("fileDescriptor");
-            sendMessage(Messages.genFileBytesRequest(fileDescriptor, pathName, position));
-            return;
-        }
+//        if (!status) {
+//            Document fileDescriptor = (Document) fileBytesResponse.get("fileDescriptor");
+//            sendMessage(Messages.genFileBytesRequest(fileDescriptor, pathName, position));
+//            return;
+//        }
 
         // Safe file name so can write successfully
         if (fileSystemManager.isSafePathName(pathName)) {
