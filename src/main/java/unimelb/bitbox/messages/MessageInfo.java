@@ -48,7 +48,7 @@ public class MessageInfo {
     }
 
     public boolean isExceedRetryLimit() {
-        return retries >= ServerMain.MAX_RETRIES - 1;
+        return retries > ServerMain.MAX_RETRIES;
     }
 
     public String getCommand() {
