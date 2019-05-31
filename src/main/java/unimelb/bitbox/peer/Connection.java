@@ -25,7 +25,7 @@ public abstract class Connection {
 
     FileSystemManager fileSystemManager;
     boolean isIncoming;
-    STATE state;
+    STATE state = STATE.HANDSHAKE;
     int nRetries;
 
     Socket socket;
@@ -285,7 +285,7 @@ public abstract class Connection {
                 // Received a Connection Reset TCP RST so close the peer and try again
                 log.info("peer reset");
                 close();
-                connectionObserver.retry(Connection.this);
+                //connectionObserver.retry(Connection.this);
             }
             catch (IOException e) {
                 log.severe("error happened when reading input from peer: " + e.getMessage());

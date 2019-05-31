@@ -1,15 +1,12 @@
 package unimelb.bitbox;
 
-import unimelb.bitbox.peer.Connection;
 import unimelb.bitbox.peer.TCPPeerManager;
 import unimelb.bitbox.peer.UDPPeerManager;
 import unimelb.bitbox.util.Document;
-import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.net.DatagramSocket;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class ClientServerMessages {
 	
@@ -80,26 +77,22 @@ public class ClientServerMessages {
         return doc.toJson();
     }
 
-    public static String genConnectPeerResponseFail(String host, int port, DatagramSocket socket) {
+    public static String genConnectPeerResponseFail(String host, int port) {
 		Document doc = new Document();
 		doc.append("command", CONNECT_PEER_RESPONSE);
 		doc.append("host", host);
 		doc.append("port", port);
-		HostPort hostPort = new HostPort(host,port);
-
 		doc.append("status", false);
 		doc.append("message", "connection failed");
 
 		return doc.toJson();
 	}
 
-	public static String genConnectPeerResponseSuccess(String host, int port, DatagramSocket socket) {
+	public static String genConnectPeerResponseSuccess(String host, int port) {
 		Document doc = new Document();
 		doc.append("command", CONNECT_PEER_RESPONSE);
 		doc.append("host", host);
 		doc.append("port", port);
-		HostPort hostPort = new HostPort(host, port);
-
 		doc.append("status", true);
 		doc.append("message", "connection success");
 
