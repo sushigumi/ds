@@ -141,17 +141,22 @@ public class Server {
 					HostPort remoteHostPort = new HostPort(hostname, port);
 
 					String connectPeerResponse;
+					try {
+						Thread.sleep(3000);
+					} catch (InterruptedException e) {
+						 System.out.println(e.getMessage());
+					}
 					while (true) {
 						if (ServerMain.getMode().equals(ServerMain.MODE_UDP)) {
 							UDPPeerManager.getInstance().addPeer(datagramSocket,remoteHostPort.toString(),fileSystemManager);
 							UDPPeer.STATE state = UDPPeerManager.getInstance().getStateByAdvertisedHostPort(remoteHostPort);
 
 							if (state == UDPPeer.STATE.OK) {
-								connectPeerResponse = ClientServerMessages.genConnectPeerResponseSuccess(hostname, port, datagramSocket);
+								connectPeerResponse = ClientServerMessages.genConnectPeerResponseSuccess(hostname, port);
 								break;
 							}
 							else if (state == null) {
-								connectPeerResponse = ClientServerMessages.genConnectPeerResponseFail(hostname, port, datagramSocket);
+								connectPeerResponse = ClientServerMessages.genConnectPeerResponseFail(hostname, port);
 								break;
 							}
 						}
@@ -159,11 +164,11 @@ public class Server {
 							TCPPeerManager.getInstance().connect(fileSystemManager,remoteHostPort.toString());
 							Connection.STATE state = TCPPeerManager.getInstance().getPeerState(remoteHostPort);
 							if (state == Connection.STATE.OK) {
-								connectPeerResponse = ClientServerMessages.genConnectPeerResponseSuccess(hostname, port, datagramSocket);
+								connectPeerResponse = ClientServerMessages.genConnectPeerResponseSuccess(hostname, port);
 								break;
 							}
 							else if (state == null) {
-								connectPeerResponse = ClientServerMessages.genConnectPeerResponseFail(hostname, port, datagramSocket);
+								connectPeerResponse = ClientServerMessages.genConnectPeerResponseFail(hostname, port);
 								break;
 							}
 						}
