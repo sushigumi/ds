@@ -101,13 +101,9 @@ public class UDPPeer {
         String digest;
 
         if (command.equals(Messages.HANDSHAKE_REQUEST)) {
-            Document hostPort = (Document) doc.get("hostPort");
+            // TODO need to add checking of host port
 
-            msg = command + hostPort.toJson();
-
-            messageDigest.update(msg.getBytes());
-
-            digest = messageDigest.toString();
+            msg = command;
         }
         else if (command.equals(Messages.FILE_DELETE_REQUEST) || command.equals(Messages.FILE_MODIFY_REQUEST) ||
         command.equals(Messages.FILE_CREATE_REQUEST)) {
@@ -115,19 +111,11 @@ public class UDPPeer {
             String pathName = doc.getString("pathName");
 
             msg = command + fd.toJson() + pathName;
-
-            messageDigest.update(msg.getBytes());
-
-            digest = messageDigest.toString();
         }
         else if (command.equals(Messages.DIRECTORY_CREATE_REQUEST) || command.equals(Messages.DIRECTORY_DELETE_REQUEST)) {
             String pathName = doc.getString("pathName");
 
             msg = command + pathName;
-
-            messageDigest.update(msg.getBytes());
-
-            digest = messageDigest.toString();
         }
         else if (command.equals(Messages.FILE_BYTES_REQUEST)) {
             Document fd = (Document) doc.get("fileDescriptor");
@@ -136,29 +124,30 @@ public class UDPPeer {
             long position = doc.getLong("position");
 
             msg = command + fd.toJson() + pathName + position + length;
-
-            messageDigest.update(msg.getBytes());
-
-            digest = messageDigest.toString();
         }
         else {
-            digest = null;
+            msg = null;
         }
 
-        if (digest != null) {
-            if (futures.containsKey(digest)) {
-                Pair pair = futures.get(digest);
+        if (msg != null) {
+            if (retry.isShutdown()) {
+                return;
+            }
+            if (futures.containsKey(msg)) {
+                Pair pair = futures.get(msg);
                 pair.future.cancel(true);
                 if (!pair.isExceedLimit()) {
                     pair.future = retry.schedule(runnable, timeout, TimeUnit.SECONDS);
                     pair.incRetries();
                 }else {
-                    futures.remove(digest);
+                    System.out.println(doc.toJson());
+                    log.info("timeout reached");
+                    futures.remove(msg);
                     close();
                 }
 
             }else {
-                futures.put(digest, new Pair(retry.schedule(runnable, timeout, TimeUnit.SECONDS)));
+                futures.put(msg, new Pair(retry.schedule(runnable, timeout, TimeUnit.SECONDS)));
             }
         }
     }
@@ -170,17 +159,12 @@ public class UDPPeer {
     public void cancelRetry(Document doc) {
         String command = doc.getString("command");
         String msg;
-        String digest;
 
         // TODO connection refused
         if (command.equals(Messages.HANDSHAKE_RESPONSE)) {
-            Document hostPort = (Document) doc.get("hostPort");
 
-            msg = Messages.HANDSHAKE_REQUEST + hostPort.toJson();
-
-            messageDigest.update(msg.getBytes());
-
-            digest = messageDigest.toString();
+            // TODO add checking of hostport
+            msg = Messages.HANDSHAKE_REQUEST;
         }
         else if (command.equals(Messages.FILE_DELETE_RESPONSE) || command.equals(Messages.FILE_MODIFY_RESPONSE) ||
                 command.equals(Messages.FILE_CREATE_RESPONSE)) {
@@ -199,10 +183,6 @@ public class UDPPeer {
             }
 
             msg = commandToDigest + fd.toJson() + pathName;
-
-            messageDigest.update(msg.getBytes());
-
-            digest = messageDigest.toString();
         }
         else if (command.equals(Messages.DIRECTORY_CREATE_RESPONSE) || command.equals(Messages.DIRECTORY_DELETE_RESPONSE)) {
             String pathName = doc.getString("pathName");
@@ -219,10 +199,6 @@ public class UDPPeer {
             }
 
             msg = commandToDigest + pathName;
-
-            messageDigest.update(msg.getBytes());
-
-            digest = messageDigest.toString();
         }
         else if (command.equals(Messages.FILE_BYTES_RESPONSE)) {
             Document fd = (Document) doc.get("fileDescriptor");
@@ -231,18 +207,14 @@ public class UDPPeer {
             long position = doc.getLong("position");
 
             msg = Messages.FILE_BYTES_REQUEST + fd.toJson() + pathName + position + length;
-
-            messageDigest.update(msg.getBytes());
-
-            digest = messageDigest.toString();
         }
         else {
-            digest = null;
+            msg = null;
         }
 
         // Remove the pair
-        if (digest != null) {
-            Pair pair = futures.remove(digest);
+        if (msg != null) {
+            Pair pair = futures.remove(msg);
             if (pair != null) {
                 pair.future.cancel(true);
             }

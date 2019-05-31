@@ -49,7 +49,7 @@ public class UDPServerThread extends ServerThread {
 
         // Set up a background thread to handle whatever incoming request received
         this.backgroundExecutor = Executors.newFixedThreadPool(5);
-        this.process = Executors.newSingleThreadExecutor();
+        this.process = Executors.newFixedThreadPool(5);
     }
 
     /**
@@ -131,6 +131,8 @@ public class UDPServerThread extends ServerThread {
             Document doc = Document.parse(message);
 
             String command = doc.getString("command");
+
+            //System.out.println(remoteHostPort.toString());
 
             //System.out.println("Received: " + command);  // Debugging async
 
