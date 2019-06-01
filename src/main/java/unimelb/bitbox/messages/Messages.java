@@ -174,7 +174,7 @@ public class Messages {
         if (ServerMain.getMode().equals(ServerMain.MODE_TCP)) {
             blockSize = Long.parseLong(Configuration.getConfigurationValue("blockSize"));
         } else {
-            blockSize = 8192;
+            blockSize = 8192 * 4 / 3;
         }
 
         ArrayList<String> messages = new ArrayList<>();
@@ -239,7 +239,7 @@ public class Messages {
         doc.append("fileDescriptor", fileDescriptor);
         doc.append("pathName", pathName);
         doc.append("position", position);
-        doc.append("length", blockSize < 8192 ? blockSize : 8192);
+        doc.append("length", blockSize < 8192 ? blockSize : 8192 * 4 / 3);
 
         return doc.toJson();
     }
