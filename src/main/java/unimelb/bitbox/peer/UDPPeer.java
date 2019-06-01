@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 public class UDPPeer {
     private Logger log = Logger.getLogger(UDPPeer.class.getName());
 
-    private final int MAX_LIMIT = Integer.parseInt(Configuration.getConfigurationValue("retries"));
+    private final int MAX_LIMIT = Integer.parseInt(Configuration.getConfigurationValue("udpRetries"));
 
     public enum STATE {
         HANDSHAKE, // In the middle of a handshake process
@@ -68,7 +68,7 @@ public class UDPPeer {
         futures = new HashMap<>();
 
         // Read the timeout value and max retries value
-        timeout = Integer.parseInt(Configuration.getConfigurationValue("timeout"));
+        timeout = Integer.parseInt(Configuration.getConfigurationValue("udpTimeout"));
 
         // Set the state
         this.state = STATE.HANDSHAKE;
