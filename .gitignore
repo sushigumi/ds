@@ -8,7 +8,6 @@ doc/
 .classpath
 .project
 .settings
-config*
 share/
 out/
 bitbox.zip
