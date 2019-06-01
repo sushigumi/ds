@@ -16,7 +16,7 @@ public class ServerMain implements FileSystemObserver {
 	public static final String MODE_UDP = "udp";
 	public static final String MODE_TCP = "tcp";
 
-	public static final int MAX_RETRIES = Integer.parseInt(Configuration.getConfigurationValue("retries"));
+	public static final int MAX_RETRIES = Integer.parseInt(Configuration.getConfigurationValue("udpRetries"));
 
 	private static String mode; // TODO could change to enum?
 
