@@ -153,11 +153,6 @@ public class UDPServerThread extends ServerThread {
                 return;
             }
 
-            // The peer has received a packet, so it is not offline yet
-            if (peer != null) {
-                peer.setActive();
-            }
-
             // Peer does not exist, so can only accept HANDSHAKE_REQUEST
             if (peerState == null) {
                 if (command.equals(Messages.HANDSHAKE_REQUEST)) {

@@ -162,10 +162,7 @@ public class Server {
 					}
 					while (true) {
 						if (ServerMain.getMode().equals(ServerMain.MODE_UDP)) {
-							
-							
-							
-							UDPPeer.STATE state = UDPPeerManager.getInstance().getStateByAdvertisedHostPort(remoteHostPort);
+							UDPPeer.STATE state = UDPPeerManager.getInstance().getStateOfPeer(remoteHostPort);
 							System.out.println(state);
 							if (state == UDPPeer.STATE.OK) {
 								connectPeerResponse = ClientServerMessages.genConnectPeerResponseSuccess(hostname, port);

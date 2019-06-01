@@ -2,17 +2,13 @@ package unimelb.bitbox.peer;
 
 import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.eventprocess.*;
-import unimelb.bitbox.messages.MessageInfo;
 import unimelb.bitbox.messages.Messages;
 import unimelb.bitbox.util.Configuration;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
-import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -44,7 +40,6 @@ public class UDPPeer {
     private FileSystemManager fileSystemManager;
 
     private DatagramSocket serverSocket;
-    private HostPort advertisedHostPort;
     private HostPort remoteHostPort;
 
     private ArrayList<HostPort> queue;
@@ -81,7 +76,6 @@ public class UDPPeer {
         // Start the handshake process
         if (isIncoming) {
             // Set the host port since it is an incoming connection and we will not receive a CONNECTION_REFUSED
-            this.advertisedHostPort = remoteHostPort;
             this.remoteHostPort = remoteHostPort;
             onNewIncoming();
         } else {
@@ -99,6 +93,7 @@ public class UDPPeer {
 
     /**
      * Queue a retry
+     *
      * @param runnable
      * @param doc
      */
@@ -111,28 +106,24 @@ public class UDPPeer {
             // TODO need to add checking of host port
 
             msg = command;
-        }
-        else if (command.equals(Messages.FILE_DELETE_REQUEST) || command.equals(Messages.FILE_MODIFY_REQUEST) ||
-        command.equals(Messages.FILE_CREATE_REQUEST)) {
+        } else if (command.equals(Messages.FILE_DELETE_REQUEST) || command.equals(Messages.FILE_MODIFY_REQUEST) ||
+                command.equals(Messages.FILE_CREATE_REQUEST)) {
             Document fd = (Document) doc.get("fileDescriptor");
             String pathName = doc.getString("pathName");
 
             msg = command + fd.toJson() + pathName;
-        }
-        else if (command.equals(Messages.DIRECTORY_CREATE_REQUEST) || command.equals(Messages.DIRECTORY_DELETE_REQUEST)) {
+        } else if (command.equals(Messages.DIRECTORY_CREATE_REQUEST) || command.equals(Messages.DIRECTORY_DELETE_REQUEST)) {
             String pathName = doc.getString("pathName");
 
             msg = command + pathName;
-        }
-        else if (command.equals(Messages.FILE_BYTES_REQUEST)) {
+        } else if (command.equals(Messages.FILE_BYTES_REQUEST)) {
             Document fd = (Document) doc.get("fileDescriptor");
             String pathName = doc.getString("pathName");
             long length = doc.getLong("length");
             long position = doc.getLong("position");
 
             msg = command + fd.toJson() + pathName + position + length;
-        }
-        else {
+        } else {
             msg = null;
         }
 
@@ -152,12 +143,11 @@ public class UDPPeer {
                 // and killing the peer becuase of this is a bad chocie
                 if (command.equals(Messages.FILE_BYTES_REQUEST)) {
                     pair.future = retry.schedule(runnable, timeout, TimeUnit.MILLISECONDS);
-                }
-                else if (!pair.isExceedLimit()) {
+                } else if (!pair.isExceedLimit()) {
                     pair.future = retry.schedule(runnable, timeout, TimeUnit.MILLISECONDS);
                     pair.incRetries();
-                }else {
-                    System.out.println(doc.toJson());
+                } else {
+                    //System.out.println(doc.toJson());
                     Pair removed = futures.remove(msg);
                     removed.future.cancel(false);
                     isActive = false;
@@ -173,14 +163,12 @@ public class UDPPeer {
 //                        log.info("thread interrupted");
 //                    }
 //
-//                    if (!isActive) {
-//                        log.info("timeout reached");
-//                        System.out.println("after n retries: " + removed.retries);
-//                        close();
-//                    }
+                    log.info("timeout reached");
+                    System.out.println("after n retries: " + removed.retries);
+                    close();
                 }
 
-            }else {
+            } else {
                 futures.put(msg, new Pair(retry.schedule(runnable, timeout, TimeUnit.MILLISECONDS)));
             }
         }
@@ -188,6 +176,7 @@ public class UDPPeer {
 
     /**
      * Set whether the peer is still receiving packets
+     *
      * @return
      */
     public void setActive() {
@@ -196,6 +185,7 @@ public class UDPPeer {
 
     /**
      * Cancel a pending retry
+     *
      * @param doc
      */
     public void cancelRetry(Document doc) {
@@ -207,8 +197,7 @@ public class UDPPeer {
 
             // TODO add checking of hostport
             msg = Messages.HANDSHAKE_REQUEST;
-        }
-        else if (command.equals(Messages.FILE_DELETE_RESPONSE) || command.equals(Messages.FILE_MODIFY_RESPONSE) ||
+        } else if (command.equals(Messages.FILE_DELETE_RESPONSE) || command.equals(Messages.FILE_MODIFY_RESPONSE) ||
                 command.equals(Messages.FILE_CREATE_RESPONSE)) {
             Document fd = (Document) doc.get("fileDescriptor");
             String pathName = doc.getString("pathName");
@@ -216,30 +205,25 @@ public class UDPPeer {
             String commandToDigest;
             if (command.equals(Messages.FILE_DELETE_RESPONSE)) {
                 commandToDigest = Messages.FILE_DELETE_REQUEST;
-            }
-            else if (command.equals(Messages.FILE_MODIFY_RESPONSE)) {
+            } else if (command.equals(Messages.FILE_MODIFY_RESPONSE)) {
                 commandToDigest = Messages.FILE_MODIFY_REQUEST;
-            }
-            else {
+            } else {
                 commandToDigest = Messages.FILE_CREATE_REQUEST;
             }
 
             msg = commandToDigest + fd.toJson() + pathName;
-        }
-        else if (command.equals(Messages.DIRECTORY_CREATE_RESPONSE) || command.equals(Messages.DIRECTORY_DELETE_RESPONSE)) {
+        } else if (command.equals(Messages.DIRECTORY_CREATE_RESPONSE) || command.equals(Messages.DIRECTORY_DELETE_RESPONSE)) {
             String pathName = doc.getString("pathName");
 
             String commandToDigest;
             if (command.equals(Messages.DIRECTORY_CREATE_RESPONSE)) {
                 commandToDigest = Messages.DIRECTORY_CREATE_REQUEST;
-            }
-            else {
+            } else {
                 commandToDigest = Messages.DIRECTORY_DELETE_REQUEST;
             }
 
             msg = commandToDigest + pathName;
-        }
-        else if (command.equals(Messages.FILE_BYTES_RESPONSE)) {
+        } else if (command.equals(Messages.FILE_BYTES_RESPONSE)) {
             Document fd = (Document) doc.get("fileDescriptor");
             String pathName = doc.getString("pathName");
             long length = doc.getLong("length");
@@ -247,8 +231,7 @@ public class UDPPeer {
 
 
             msg = Messages.FILE_BYTES_REQUEST + fd.toJson() + pathName + position + length;
-        }
-        else {
+        } else {
             msg = null;
         }
 
@@ -352,7 +335,7 @@ public class UDPPeer {
     }
 
     public void processFileSystemEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
-        switch(fileSystemEvent.event) {
+        switch (fileSystemEvent.event) {
             case FILE_CREATE:
                 if (!sender.isShutdown()) {
                     sender.submit(new FileCreateRequest(serverSocket, remoteHostPort, fileSystemEvent, this));
@@ -393,29 +376,24 @@ public class UDPPeer {
 
     /**
      * Get the host port of the client
+     *
      * @return
      */
     public HostPort getRemoteHostPort() {
         return remoteHostPort;
     }
 
-
-    /**
-     * Get the advertised host port of the client
-     * @return
-     */
-    public HostPort getAdvertisedHostPort() {
-        return advertisedHostPort;
-    }
-    /** Set the remote host port and update it from the advertised name to the ip address
-     * @param remoteHostPort
-     */
-    public void setRemoteHostPort(HostPort remoteHostPort) {
-        this.remoteHostPort = remoteHostPort;
-    }
+//    /**
+//     * Set the remote host port and update it from the advertised name to the ip address
+//     * @param remoteHostPort
+//     */
+//    public void setRemoteHostPort(HostPort remoteHostPort) {
+//        this.remoteHostPort = remoteHostPort;
+//    }
 
     /**
      * Get the current state of the UDP client
+     *
      * @return
      */
     public STATE getState() {
@@ -424,6 +402,7 @@ public class UDPPeer {
 
     /**
      * Set the state of the UDP client
+     *
      * @param state
      */
     public void setState(STATE state) {
@@ -456,5 +435,4 @@ public class UDPPeer {
             sendMessage(Messages.genHandshakeResponse(ServerMain.getLocalHostPort()));
         }
     }
-
 }
