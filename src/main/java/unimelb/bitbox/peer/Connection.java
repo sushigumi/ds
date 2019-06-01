@@ -16,10 +16,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
 public abstract class Connection {
+    public enum STATE {
+        HANDSHAKE, // In the middle of a handshake process
+        OK // After handshake successful
+    }
+
     static Logger log = Logger.getLogger(Connection.class.getName());
 
     FileSystemManager fileSystemManager;
     boolean isIncoming;
+    STATE state = STATE.HANDSHAKE;
     int nRetries;
 
     Socket socket;
@@ -99,6 +105,14 @@ public abstract class Connection {
                 sender.submit(new DirectoryDeleteRequest(output, fileSystemEvent.pathName));
                 break;
         }
+    }
+
+    /**
+     * Return whether the TCP connection has succeeded or not
+     * @return
+     */
+    public STATE getState() {
+        return state;
     }
 
     /**
@@ -271,7 +285,7 @@ public abstract class Connection {
                 // Received a Connection Reset TCP RST so close the peer and try again
                 log.info("peer reset");
                 close();
-                connectionObserver.retry(Connection.this);
+                //connectionObserver.retry(Connection.this);
             }
             catch (IOException e) {
                 log.severe("error happened when reading input from peer: " + e.getMessage());

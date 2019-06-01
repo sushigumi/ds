@@ -22,11 +22,11 @@ public class MessageValidator {
         	return "md5";
         }
         //not so sure
-        if (Long.valueOf(fileDescriptor.getLong("fileSize") )== null) {
+        if (fileDescriptor.get("fileSize") == null) {
         	return "fileSize";	
         }
         
-        if (Long.valueOf(fileDescriptor.getLong("lastModified")) == null) {
+        if (fileDescriptor.get("lastModified") == null) {
         	return "lastModified";	
         }
         
@@ -49,11 +49,11 @@ public class MessageValidator {
         	return "md5";
         }
         //not so sure
-        else if (Long.valueOf(fileDescriptor.getLong("fileSize") )== null) {
+        else if (fileDescriptor.get("fileSize") == null) {
         	return "fileSize";	
         }
         
-        else if (Long.valueOf(fileDescriptor.getLong("lastModified")) == null) {
+        else if (fileDescriptor.get("lastModified") == null) {
         	return "lastModified";	
         }
         
@@ -65,7 +65,7 @@ public class MessageValidator {
         	return "message";       	
         }
         
-        if (Boolean.toString(doc.getBoolean("status")) == null) {
+        if (doc.get("status") == null) {
         	return "status";     	
         }
    	
@@ -84,11 +84,11 @@ public class MessageValidator {
         	return "md5";
         }
         //not so sure
-        else if (Long.valueOf(fileDescriptor.getLong("fileSize") )== null) {
+        else if (fileDescriptor.get("fileSize") == null) {
         	return "fileSize";	
         }
         
-        else if (Long.valueOf(fileDescriptor.getLong("lastModified")) == null) {
+        else if (fileDescriptor.get("lastModified") == null) {
         	return "lastModified";	
         }
         
@@ -96,11 +96,11 @@ public class MessageValidator {
         	return "pathName";       	
         }
     	
-        if (Long.valueOf(doc.getLong("position") )== null) {
+        if (doc.get("position") == null) {
         	return "position";	
         }
         
-        if (Long.valueOf(doc.getLong("length")) == null) {
+        if (doc.get("length") == null) {
         	return "length";	
         }
         
@@ -119,11 +119,11 @@ public class MessageValidator {
         	return "md5";
         }
         //not so sure
-        else if (Long.valueOf(fileDescriptor.getLong("fileSize") )== null) {
+        else if (fileDescriptor.get("fileSize") == null) {
         	return "fileSize";	
         }
         
-        else if (Long.valueOf(fileDescriptor.getLong("lastModified")) == null) {
+        else if (fileDescriptor.get("lastModified") == null) {
         	return "lastModified";	
         }
         
@@ -131,11 +131,11 @@ public class MessageValidator {
         	return "pathName";
         }
 
-        if (Long.valueOf(doc.getLong("position") )== null) {
+        if (doc.get("position") == null) {
         	return "position";
         }
 
-        if (Long.valueOf(doc.getLong("length")) == null) {
+        if (doc.get("length") == null) {
         	return "length";
         }
 
@@ -147,7 +147,7 @@ public class MessageValidator {
         	return "message";
         }
 
-        if (Boolean.toString(doc.getBoolean("status")) == null) {
+        if (doc.get("status") == null) {
         	return "status";
         }
         return null;
@@ -175,7 +175,7 @@ public class MessageValidator {
             return "message";
         }
 
-        if (Boolean.toString(doc.getBoolean("status")) == null) {
+        if (doc.get("status") == null) {
             return "status";
         }
         return null;

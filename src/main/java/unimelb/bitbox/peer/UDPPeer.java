@@ -12,12 +12,19 @@ import unimelb.bitbox.util.HostPort;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.*;
+import java.util.logging.Logger;
 
 //TODO add retry mechanism
 public class UDPPeer {
+    private Logger log = Logger.getLogger(UDPPeer.class.getName());
+
+    private final int MAX_LIMIT = Integer.parseInt(Configuration.getConfigurationValue("retries"));
+
     public enum STATE {
         HANDSHAKE, // In the middle of a handshake process
         OK // After handshake successful
@@ -27,16 +34,19 @@ public class UDPPeer {
     private ScheduledExecutorService retry;
     private int timeout;
 
+    MessageDigest messageDigest;
+
     private STATE state;
 
     private FileSystemManager fileSystemManager;
 
     private DatagramSocket serverSocket;
+    private HostPort advertisedHostPort;
     private HostPort remoteHostPort;
 
     private ArrayList<HostPort> queue;
 
-    private ArrayList<MessageInfo> messagesSent;
+    private HashMap<String, Pair> futures;
 
     public UDPPeer(FileSystemManager fileSystemManager, DatagramSocket serverSocket, HostPort remoteHostPort, boolean isIncoming) {
         this.serverSocket = serverSocket;
@@ -45,11 +55,17 @@ public class UDPPeer {
         sender = Executors.newSingleThreadExecutor();
         retry = Executors.newScheduledThreadPool(1);
 
+        try {
+            messageDigest = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            log.severe("error getting hash function");
+        }
+
         // Add the host port to the queue
         queue = new ArrayList<>();
         queue.add(remoteHostPort);
 
-        messagesSent = new ArrayList<>();
+        futures = new HashMap<>();
 
         // Read the timeout value and max retries value
         timeout = Integer.parseInt(Configuration.getConfigurationValue("timeout"));
@@ -60,6 +76,7 @@ public class UDPPeer {
         // Start the handshake process
         if (isIncoming) {
             // Set the host port since it is an incoming connection and we will not receive a CONNECTION_REFUSED
+            this.advertisedHostPort = remoteHostPort;
             this.remoteHostPort = remoteHostPort;
             onNewIncoming();
         } else {
@@ -71,104 +88,158 @@ public class UDPPeer {
      * Called when the UDP peer is offline
      */
     public void shutdown() {
-        sender.shutdownNow();
-        retry.shutdownNow();
+        sender.shutdown();
+        retry.shutdown();
     }
 
     /**
-     * Queue a runnable to be retried after a certain time
+     * Queue a retry
      * @param runnable
      * @param doc
      */
     public void queueRetry(Runnable runnable, Document doc) {
+        String command = doc.getString("command");
+        String msg;
+        String digest;
 
-        // Save the document into the message info and hash it
-        MessageInfo info = new MessageInfo(doc);
+        if (command.equals(Messages.HANDSHAKE_REQUEST)) {
+            // TODO need to add checking of host port
 
-        synchronized (this) {
+            msg = command;
+        }
+        else if (command.equals(Messages.FILE_DELETE_REQUEST) || command.equals(Messages.FILE_MODIFY_REQUEST) ||
+        command.equals(Messages.FILE_CREATE_REQUEST)) {
+            Document fd = (Document) doc.get("fileDescriptor");
+            String pathName = doc.getString("pathName");
 
-            int index = messagesSent.indexOf(info);
+            msg = command + fd.toJson() + pathName;
+        }
+        else if (command.equals(Messages.DIRECTORY_CREATE_REQUEST) || command.equals(Messages.DIRECTORY_DELETE_REQUEST)) {
+            String pathName = doc.getString("pathName");
 
-            if (index == -1) {
-                info.setFuture(retry.schedule(runnable, timeout, TimeUnit.SECONDS));
-                messagesSent.add(info);
-            } else {
-                info = messagesSent.get(index);
-                if (!info.isExceedRetryLimit()) {
-                    info.updateFuture(retry.schedule(runnable, timeout, TimeUnit.SECONDS));
-                } else {
+            msg = command + pathName;
+        }
+        else if (command.equals(Messages.FILE_BYTES_REQUEST)) {
+            Document fd = (Document) doc.get("fileDescriptor");
+            String pathName = doc.getString("pathName");
+            long length = doc.getLong("length");
+            long position = doc.getLong("position");
+
+            msg = command + fd.toJson() + pathName + position + length;
+        }
+        else {
+            msg = null;
+        }
+
+        if (msg != null) {
+            if (retry.isShutdown()) {
+                return;
+            }
+            if (futures.containsKey(msg)) {
+                Pair pair = futures.get(msg);
+                pair.future.cancel(true);
+                if (!pair.isExceedLimit()) {
+                    pair.future = retry.schedule(runnable, timeout, TimeUnit.SECONDS);
+                    pair.incRetries();
+                }else {
                     System.out.println(doc.toJson());
-                    UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
+                    log.info("timeout reached");
+                    futures.remove(msg);
+                    close();
                 }
+
+            }else {
+                futures.put(msg, new Pair(retry.schedule(runnable, timeout, TimeUnit.SECONDS)));
             }
         }
     }
 
     /**
-     * Cancel the retry which is about to happen after timeout period reaches
+     * Cancel a pending retry
      * @param doc
      */
     public void cancelRetry(Document doc) {
         String command = doc.getString("command");
+        String msg;
 
-        MessageInfo toRemove = null;
-        synchronized (this) {
+        // TODO connection refused
+        if (command.equals(Messages.HANDSHAKE_RESPONSE)) {
 
-            for (MessageInfo info : messagesSent) {
-                if (info.getCommand().equals(Messages.HANDSHAKE_REQUEST)) {
-                    if (command.equals(Messages.HANDSHAKE_RESPONSE) || command.equals(Messages.CONNECTION_REFUSED)) {
-                        toRemove = info;
-                    }
-                } else if (info.getCommand().equals(Messages.DIRECTORY_CREATE_REQUEST) || info.getCommand().equals(Messages.DIRECTORY_DELETE_REQUEST)) {
-                    if (!command.equals(Messages.DIRECTORY_CREATE_RESPONSE) && !command.equals(Messages.DIRECTORY_DELETE_RESPONSE))
-                        continue;
-                    String pathName = doc.getString("pathName");
-                    String otherPathName = info.getDoc().getString("pathName");
+            // TODO add checking of hostport
+            msg = Messages.HANDSHAKE_REQUEST;
+        }
+        else if (command.equals(Messages.FILE_DELETE_RESPONSE) || command.equals(Messages.FILE_MODIFY_RESPONSE) ||
+                command.equals(Messages.FILE_CREATE_RESPONSE)) {
+            Document fd = (Document) doc.get("fileDescriptor");
+            String pathName = doc.getString("pathName");
 
-                    if (pathName.equals(otherPathName)) {
-                        toRemove = info;
-                    }
-                } else {
-                    if (info.getCommand().equals(Messages.FILE_BYTES_REQUEST)) {
-                        if (!command.equals(Messages.FILE_BYTES_RESPONSE)) continue;
-
-                        if (!info.getDoc().getString("position").equals(doc.getString("position"))) {
-                            continue;
-                        }
-                        if (!info.getDoc().getString("length").equals(doc.getString("length"))) {
-                            continue;
-                        }
-                    }
-
-                    if (!command.equals(Messages.FILE_CREATE_RESPONSE) && !command.equals(Messages.FILE_DELETE_RESPONSE) &&
-                            !command.equals(Messages.FILE_MODIFY_RESPONSE)) {
-                        continue;
-                    }
-
-                    Document infofd = (Document) info.getDoc().get("fileDescriptor");
-                    Document fd = (Document) info.getDoc().get("fileDescriptor");
-
-                    if (!(infofd.getLong("lastModified") == fd.getLong("lastModified"))) continue;
-
-                    if (!infofd.getString("md5").equals(fd.getString("md5"))) continue;
-
-                    if (!(infofd.getLong("fileSize") == fd.getLong("fileSize"))) continue;
-
-                    if (!info.getDoc().getString("pathName").equals(doc.getString("pathName"))) {
-                        continue;
-                    }
-
-                    toRemove = info;
-                }
+            String commandToDigest = null;
+            if (command.equals(Messages.FILE_DELETE_RESPONSE)) {
+                commandToDigest = Messages.FILE_DELETE_REQUEST;
             }
+            else if (command.equals(Messages.FILE_MODIFY_RESPONSE)) {
+                commandToDigest = Messages.FILE_MODIFY_REQUEST;
+            }
+            else if (command.equals(Messages.FILE_CREATE_RESPONSE)) {
+                commandToDigest = Messages.FILE_CREATE_REQUEST;
+            }
+
+            msg = commandToDigest + fd.toJson() + pathName;
+        }
+        else if (command.equals(Messages.DIRECTORY_CREATE_RESPONSE) || command.equals(Messages.DIRECTORY_DELETE_RESPONSE)) {
+            String pathName = doc.getString("pathName");
+
+            String commandToDigest;
+            if (command.equals(Messages.DIRECTORY_CREATE_RESPONSE)) {
+                commandToDigest = Messages.DIRECTORY_CREATE_REQUEST;
+            }
+            else if (command.equals(Messages.DIRECTORY_DELETE_RESPONSE)) {
+                commandToDigest = Messages.DIRECTORY_DELETE_REQUEST;
+            }
+            else {
+                commandToDigest = null;
+            }
+
+            msg = commandToDigest + pathName;
+        }
+        else if (command.equals(Messages.FILE_BYTES_RESPONSE)) {
+            Document fd = (Document) doc.get("fileDescriptor");
+            String pathName = doc.getString("pathName");
+            long length = doc.getLong("length");
+            long position = doc.getLong("position");
+
+            msg = Messages.FILE_BYTES_REQUEST + fd.toJson() + pathName + position + length;
+        }
+        else {
+            msg = null;
         }
 
-        int index = messagesSent.indexOf(toRemove);
-        
-        if (index < 0) return;
+        // Remove the pair
+        if (msg != null) {
+            Pair pair = futures.remove(msg);
+            if (pair != null) {
+                pair.future.cancel(true);
+            }
+        }
+    }
 
-        MessageInfo info = messagesSent.remove(index);
-        info.getFuture().cancel(false);
+    private class Pair {
+        int retries;
+        ScheduledFuture future;
+
+        public Pair(ScheduledFuture future) {
+            this.future = future;
+            this.retries = 0;
+        }
+
+        public void incRetries() {
+            retries++;
+        }
+
+
+        public boolean isExceedLimit() {
+            return retries >= MAX_LIMIT;
+        }
     }
 
     /**
@@ -178,13 +249,13 @@ public class UDPPeer {
     private void onNewOutgoing() {
         this.remoteHostPort = queue.remove(0);
 
-        try {
-            String ipaddress = InetAddress.getByName(remoteHostPort.host).getHostAddress();
-            this.remoteHostPort = new HostPort(ipaddress, remoteHostPort.port);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-            UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
-        }
+//        try {
+//            String ipaddress = InetAddress.getByName(remoteHostPort.host).getHostAddress();
+//            this.remoteHostPort = new HostPort(ipaddress, remoteHostPort.port);
+//        } catch (UnknownHostException e) {
+//            e.printStackTrace();
+//            UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
+//        }
 
         // Send a HANDSHAKE_REQUEST to the peer
         sender.submit(new HandshakeReq(serverSocket, remoteHostPort));
@@ -215,7 +286,7 @@ public class UDPPeer {
 
 
             // Generate the sync events
-            syncEvents();
+            //syncEvents();
         }
         // Send CONNECTION_REFUSED
         else {
@@ -245,25 +316,41 @@ public class UDPPeer {
     public void processFileSystemEvent(FileSystemManager.FileSystemEvent fileSystemEvent) {
         switch(fileSystemEvent.event) {
             case FILE_CREATE:
-                sender.submit(new FileCreateRequest(serverSocket, remoteHostPort, fileSystemEvent, this));
+                if (!sender.isShutdown()) {
+                    sender.submit(new FileCreateRequest(serverSocket, remoteHostPort, fileSystemEvent, this));
+                }
                 break;
 
             case FILE_DELETE:
-                sender.submit(new FileDeleteRequest(serverSocket, remoteHostPort, fileSystemEvent, this));
+                if (!sender.isShutdown()) {
+                    sender.submit(new FileDeleteRequest(serverSocket, remoteHostPort, fileSystemEvent, this));
+                }
                 break;
 
             case FILE_MODIFY:
-                sender.submit(new FileModifyRequest(serverSocket, remoteHostPort, fileSystemEvent, this));
+                if (!sender.isShutdown()) {
+                    sender.submit(new FileModifyRequest(serverSocket, remoteHostPort, fileSystemEvent, this));
+                }
                 break;
 
             case DIRECTORY_CREATE:
-                sender.submit(new DirectoryCreateRequest(serverSocket, remoteHostPort, fileSystemEvent.pathName, this));
+                if (!sender.isShutdown()) {
+                    sender.submit(new DirectoryCreateRequest(serverSocket, remoteHostPort, fileSystemEvent.pathName, this));
+                }
                 break;
 
             case DIRECTORY_DELETE:
-                sender.submit(new DirectoryDeleteRequest(serverSocket, remoteHostPort, fileSystemEvent.pathName, this));
+                if (!sender.isShutdown()) {
+                    sender.submit(new DirectoryDeleteRequest(serverSocket, remoteHostPort, fileSystemEvent.pathName, this));
+                }
                 break;
         }
+    }
+
+    private void close() {
+        sender.shutdown();
+        retry.shutdown();
+        UDPPeerManager.getInstance().disconnectPeer(remoteHostPort);
     }
 
     /**
@@ -274,8 +361,15 @@ public class UDPPeer {
         return remoteHostPort;
     }
 
+
     /**
-     * Set the remote host port and update it from the advertised name to the ip address
+     * Get the advertised host port of the client
+     * @return
+     */
+    public HostPort getAdvertisedHostPort() {
+        return advertisedHostPort;
+    }
+    /** Set the remote host port and update it from the advertised name to the ip address
      * @param remoteHostPort
      */
     public void setRemoteHostPort(HostPort remoteHostPort) {

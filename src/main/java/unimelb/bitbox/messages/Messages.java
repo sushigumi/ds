@@ -185,7 +185,7 @@ public class Messages {
             doc.append("fileDescriptor", fileDescriptor);
             doc.append("pathName", pathName);
             doc.append("position", i);
-            if (i + blockSize < fileSize) {
+            if (i + blockSize <= fileSize) {
                 doc.append("length", blockSize);
             } else {
                 doc.append("length", fileSize - i);

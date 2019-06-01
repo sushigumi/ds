@@ -64,6 +64,30 @@ public class TCPPeerManager implements ConnectionObserver {
         log.info(peers.size() + " peers currently connected");
     }
 
+    public void closeConnection(HostPort remoteHostPort, boolean isIncoming) {
+        int index = 0;
+        for(Connection connection: peers) {
+            if (connection.remoteHostPort.equals(remoteHostPort)) {
+                break;
+            }
+            index++;
+        }
+
+        if (index < peers.size()) {
+            if (isIncoming) {
+                nIncomingConnections--;
+            }
+
+            Connection removed = peers.remove(index);
+            removed.close();
+
+            log.info("successfully closed peer");
+            log.info(peers.size() + " peers currently connected");
+        }
+
+    }
+
+
     @Override
     public void retry(Connection connection) {
         log.info("retrying peer..");
@@ -82,6 +106,24 @@ public class TCPPeerManager implements ConnectionObserver {
         }
 
         return hostPorts;
+    }
+
+    /**
+     * Returns true if the peer is successfully connected else it is false
+     * @param remoteHostPort
+     * @return
+     */
+    public Connection.STATE getPeerState(HostPort remoteHostPort) {
+        for (Connection peer: peers) {
+        	if (peer.remoteHostPort == null) {
+            	continue;
+            }
+            if (peer.remoteHostPort.equals(remoteHostPort)) {
+                return peer.getState();
+            }
+        }
+
+        return null;
     }
 
     /**

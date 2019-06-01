@@ -42,6 +42,7 @@ public abstract class EventProcess implements Runnable {
     }
 
     public EventProcess() {
+        this.mode = ServerMain.MODE_TCP;
         this.writer = null;
     }
 
@@ -59,9 +60,12 @@ public abstract class EventProcess implements Runnable {
             } else if (mode.equals(ServerMain.MODE_UDP)) {
                 // Convert the message to a bytes buffer before sending to the other peer
                 message = message + "\n";
-                byte[] buf = message.getBytes();
-                System.out.println(buf.length);
+                byte[] buf = message.getBytes("UTF-8");
+                //System.out.println(message);
                 DatagramPacket packet = new DatagramPacket(buf, buf.length, InetAddress.getByName(hostPort.host), hostPort.port);
+//                System.out.println(packet.getLength());
+//                System.out.println(new String(packet.getData()));
+                //System.out.println(packet.getAddress() + "," + packet.getPort());
                 socket.send(packet);
 
                 // Insert a retry only for requests sent
@@ -72,6 +76,9 @@ public abstract class EventProcess implements Runnable {
 
         } catch (IOException e) {
             log.severe("error writing message to peer");
+        }
+        catch (Exception e) {
+            log.severe(e.getMessage());
         }
 
     }

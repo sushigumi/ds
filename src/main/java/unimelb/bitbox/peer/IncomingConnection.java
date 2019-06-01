@@ -19,6 +19,7 @@ public class IncomingConnection extends Connection {
         this.socket = socket;
         this.isIncoming = true;
         this.nRetries = 0;
+        this.state = STATE.HANDSHAKE;
 
         // Initialise threads
         this.listener = Executors.newSingleThreadExecutor();
@@ -41,11 +42,14 @@ public class IncomingConnection extends Connection {
                 Document doc = Document.parse(input.readLine());
                 String command = doc.getString("command");
 
+                //System.out.println(doc.toJson());
+
                 // HANDSHAKE_REQUEST received
                 if (command.equals(Messages.HANDSHAKE_REQUEST)) {
                     // If there are still available connections then send HANDSHAKE_RESPONSE
                     if (TCPPeerManager.getInstance().isAvailableConnections()) {
                         remoteHostPort = new HostPort((Document)doc.get("hostPort"));
+                        state = STATE.OK;
                         sendMessage(Messages.genHandshakeResponse(ServerMain.getLocalHostPort()));
 
                         syncEvents();

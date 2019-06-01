@@ -5,6 +5,8 @@ import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -50,6 +52,23 @@ public class UDPPeerManager {
         log.info("adding peer " + remoteHostPort.toString());
     }
 
+    public boolean cmpHostPorts(HostPort h1, HostPort h2) {
+        if (h1.equals(h2)) {
+            return true;
+        }
+
+        try {
+            if (InetAddress.getByName(h1.host).getHostAddress().equals(h2.host)) {
+                return true;
+            }
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        return false;
+    }
+
     /**
      * Disconnect a peer and remove it from the list of remembered peers.
      * Thus, no more messages can be sent to it.
@@ -59,7 +78,7 @@ public class UDPPeerManager {
         UDPPeer toRemove = null;
 
         for (UDPPeer peer : rememberedPeers) {
-            if (peer.getRemoteHostPort().equals(remoteHostPort)) {
+            if (cmpHostPorts(peer.getRemoteHostPort(), remoteHostPort)) {
                 toRemove = peer;
                 break;
             }
@@ -73,7 +92,7 @@ public class UDPPeerManager {
 
         log.info("disconnected peer " + remoteHostPort.toString() + " due to inactivity");
 
-        System.out.println(rememberedPeers.size());
+        //System.out.println(rememberedPeers.size());
     }
 
     /**
@@ -89,6 +108,19 @@ public class UDPPeerManager {
         }
 
         return hostPorts;
+    }
+
+    public UDPPeer.STATE getStateByAdvertisedHostPort(HostPort aHostPort) {
+        for (UDPPeer peer: rememberedPeers) {
+            if(peer.getAdvertisedHostPort() == null) {
+            	continue;
+            }
+        	if (peer.getAdvertisedHostPort().equals(aHostPort)) {
+                return peer.getState();
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -119,7 +151,7 @@ public class UDPPeerManager {
         UDPPeer toRetry = null;
         // Search for the peer
         for (UDPPeer peer : rememberedPeers) {
-            if (peer.getRemoteHostPort().equals(remoteHostPort)) {
+            if (cmpHostPorts(peer.getRemoteHostPort(), remoteHostPort)) {
                 toRetry = peer;
                 break;
             }
@@ -138,7 +170,7 @@ public class UDPPeerManager {
      */
     public UDPPeer.STATE getStateOfPeer(HostPort remoteHostPort) {
         for (UDPPeer peer : rememberedPeers) {
-            if (peer.getRemoteHostPort().equals(remoteHostPort)) {
+            if (cmpHostPorts(peer.getRemoteHostPort(), remoteHostPort)) {
                 return peer.getState();
             }
         }
@@ -152,7 +184,7 @@ public class UDPPeerManager {
      */
     public void setStateOfPeer(HostPort remoteHostPort, UDPPeer.STATE state) {
         for (UDPPeer peer : rememberedPeers) {
-            if (peer.getRemoteHostPort().equals(remoteHostPort)) {
+            if (cmpHostPorts(peer.getRemoteHostPort(), remoteHostPort)) {
                 peer.setState(state);
 
                 // If just became OK then we need to sync events
@@ -171,7 +203,7 @@ public class UDPPeerManager {
      */
     public UDPPeer getPeer(HostPort remoteHostPort) {
         for (UDPPeer peer : rememberedPeers) {
-            if (peer.getRemoteHostPort().equals(remoteHostPort)) {
+            if (cmpHostPorts(peer.getRemoteHostPort(), remoteHostPort)) {
                 return peer;
             }
         }
