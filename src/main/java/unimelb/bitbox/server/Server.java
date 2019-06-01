@@ -1,4 +1,4 @@
-package unimelb.bitbox;
+package unimelb.bitbox.server;
 
 import java.io.*;
 import java.net.DatagramSocket;
@@ -14,6 +14,9 @@ import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import unimelb.bitbox.client.ClientServerMessages;
+import unimelb.bitbox.client.KeyTransformation;
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.peer.Connection;
 import unimelb.bitbox.peer.TCPPeerManager;
 import unimelb.bitbox.peer.UDPPeer;
@@ -72,7 +75,7 @@ public class Server {
 				System.out.println("1. AuthRequest received:" + clientMsg);
 				Document doc = Document.parse(clientMsg);					
 				
-	            if(doc.containsKey("command") && doc.getString("command").equals(ClientServerMessages.AUTH_REQUEST)) {	
+	            if(doc.containsKey("command") && doc.getString("command").equals(ClientServerMessages.AUTH_REQUEST)) {
 	        		String identity = doc.getString("identity");
 	        		System.out.println("identity: " + identity);
 	        		String[] keys = Configuration.getConfigurationValue("authorized_keys").split(",");

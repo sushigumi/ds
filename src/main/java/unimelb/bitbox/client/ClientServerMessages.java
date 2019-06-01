@@ -1,4 +1,4 @@
-package unimelb.bitbox;
+package unimelb.bitbox.client;
 
 import unimelb.bitbox.peer.TCPPeerManager;
 import unimelb.bitbox.peer.UDPPeerManager;

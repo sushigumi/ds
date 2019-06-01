@@ -1,4 +1,4 @@
-package unimelb.bitbox;
+package unimelb.bitbox.client;
 
 import java.io.*;
 import java.math.BigInteger;
