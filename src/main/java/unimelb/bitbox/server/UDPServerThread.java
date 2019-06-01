@@ -203,15 +203,15 @@ public class UDPServerThread extends ServerThread {
             else if (peerState == UDPPeer.STATE.OK) {
                 // Received a connection request again, means the message has got lost. So we can just send a HANDSHAKE_RESPONSE
                 // since the previous message was a HANDSHAKE_RESPONSE
-                if (command.equals(Messages.HANDSHAKE_REQUEST)) {
+                /*if (command.equals(Messages.HANDSHAKE_REQUEST)) {
                     process.submit(new EventProcess() {
                         @Override
                         public void run() {
                             sendMessage(Messages.genHandshakeResponse(ServerMain.getLocalHostPort()));
                         }
                     });
-                }
-                else if (command.equals(Messages.FILE_CREATE_REQUEST)) {
+                }*/
+               if (command.equals(Messages.FILE_CREATE_REQUEST)) {
                     String createRequest = MessageValidator.getInstance().validateFileChangeRequest(doc);
                     if (createRequest != null) {
                         process.submit(new InvalidProtocol(serverSocket, remoteHostPort, InvalidProtocolType.MISSING_FIELD));

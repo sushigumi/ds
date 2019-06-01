@@ -150,7 +150,19 @@ public class Server {
 					String connectPeerResponse;
 					
 					if (ServerMain.getMode().equals(ServerMain.MODE_UDP)) {
-						UDPPeerManager.getInstance().addPeer(datagramSocket,remoteHostPort.toString(),fileSystemManager);
+						if (UDPPeerManager.getInstance().getPeer(remoteHostPort) == null) {
+							UDPPeerManager.getInstance().addPeer(datagramSocket,remoteHostPort.toString(),fileSystemManager);
+						} else {
+							connectPeerResponse = ClientServerMessages.genConnectPeerResponseFail(hostname, port);
+							System.out.println("4. connect peer response (raw): " + connectPeerResponse + "\n");
+							String encryptConnectPeerResponse = encryption(secretKey, connectPeerResponse);
+							System.out.println("5.connect peer response (encrypted): " + encryptConnectPeerResponse);
+							String payloadConnectPeerResponse = ClientServerMessages.genPayload(encryptConnectPeerResponse);
+							System.out.println("6.connect peer response (payload): " + payloadConnectPeerResponse);
+							output.write(payloadConnectPeerResponse + "\n");
+					    	output.flush();
+							return;
+						}
 					}else {
 						TCPPeerManager.getInstance().connect(fileSystemManager,remoteHostPort.toString());
 					}
@@ -163,7 +175,6 @@ public class Server {
 					while (true) {
 						if (ServerMain.getMode().equals(ServerMain.MODE_UDP)) {
 							UDPPeer.STATE state = UDPPeerManager.getInstance().getStateOfPeer(remoteHostPort);
-							System.out.println(state);
 							if (state == UDPPeer.STATE.OK) {
 								connectPeerResponse = ClientServerMessages.genConnectPeerResponseSuccess(hostname, port);
 								break;
