@@ -27,6 +27,15 @@ public class Server {
 	private DatagramSocket datagramSocket = null;
 	private FileSystemManager fileSystemManager;
 
+<<<<<<< HEAD
+	public Server(DatagramSocket socket, FileSystemManager fileSystemManager) {
+		   this(fileSystemManager);
+		   datagramSocket = socket;
+		}
+	
+	public Server(FileSystemManager fsm){
+		fileSystemManager = fsm;
+=======
 	public Server(DatagramSocket datagramSocket, FileSystemManager fileSystemManager) {
 		this.fileSystemManager = fileSystemManager;
 		this.datagramSocket = datagramSocket;
@@ -42,6 +51,7 @@ public class Server {
 	}
 
 	private void startServer() {
+>>>>>>> fbc7373bab13f8a60aa32ceb9d875f8a986a05db
 		int portNumber = Integer.parseInt(Configuration.getConfigurationValue("clientPort"));
 		try {
 			ServerSocket server = new ServerSocket(portNumber);
@@ -163,10 +173,8 @@ public class Server {
 					while (true) {
 						if (ServerMain.getMode().equals(ServerMain.MODE_UDP)) {
 							
-							
-							
 							UDPPeer.STATE state = UDPPeerManager.getInstance().getStateByAdvertisedHostPort(remoteHostPort);
-							System.out.println(state);
+
 							if (state == UDPPeer.STATE.OK) {
 								connectPeerResponse = ClientServerMessages.genConnectPeerResponseSuccess(hostname, port);
 								break;
