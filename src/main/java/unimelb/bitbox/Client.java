@@ -137,7 +137,7 @@ public class Client {
     
 		default:
 			System.out.println("Invalid command!");
-			break;
+			System.exit(2);
     
 		}
 	}
