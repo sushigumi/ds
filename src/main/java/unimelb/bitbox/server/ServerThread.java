@@ -1,6 +1,8 @@
 package unimelb.bitbox.server;
 
+import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.peer.TCPPeerManager;
+import unimelb.bitbox.peer.UDPPeerManager;
 import unimelb.bitbox.util.Configuration;
 import unimelb.bitbox.util.FileSystemManager;
 
@@ -25,8 +27,15 @@ public abstract class ServerThread extends Thread {
                 ArrayList<FileSystemManager.FileSystemEvent> fileSystemEvents = fileSystemManager.generateSyncEvents();
 
                 for (FileSystemManager.FileSystemEvent event : fileSystemEvents) {
-                    TCPPeerManager.getInstance().processFileSystemEvent(event);
+                    if (ServerMain.getMode().equals(ServerMain.MODE_TCP)) {
+                        TCPPeerManager.getInstance().processFileSystemEvent(event);
+                    }
+                    else {
+                        UDPPeerManager.getInstance().processFileSystemEvent(event);
+                    }
+
                 }
+
             }
         };
 
