@@ -15,7 +15,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import unimelb.bitbox.client.ClientServerMessages;
-import unimelb.bitbox.client.KeyTransformation;
+import unimelb.bitbox.client.PublicKeyTransformation;
 import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.peer.Connection;
 import unimelb.bitbox.peer.TCPPeerManager;
@@ -72,12 +72,12 @@ public class Server {
 			//Read the message from the client and reply
 			String clientMsg = null;
 			while((clientMsg = input.readLine()) != null) {
-				System.out.println("1. AuthRequest received:" + clientMsg);
+				//System.out.println("1. AuthRequest received:" + clientMsg);
 				Document doc = Document.parse(clientMsg);					
 				
 	            if(doc.containsKey("command") && doc.getString("command").equals(ClientServerMessages.AUTH_REQUEST)) {
 	        		String identity = doc.getString("identity");
-	        		System.out.println("identity: " + identity);
+	        		//System.out.println("identity: " + identity);
 	        		String[] keys = Configuration.getConfigurationValue("authorized_keys").split(",");
 	        		boolean ifFound = false;
 	        		
@@ -87,11 +87,11 @@ public class Server {
 	        				secretKey = generateSecretKey();
 
 	        				byte[] publicKeyBytes = key.getBytes();
-	        				RSAPublicKeySpec publicKey =  KeyTransformation.decodeOpenSSH(publicKeyBytes);
+	        				RSAPublicKeySpec publicKey =  PublicKeyTransformation.decodeOpenSSH(publicKeyBytes);
 	        				String message = EncryptSecretKey(publicKey, secretKey);
 	        				
 	            			String authResponse = ClientServerMessages.genAuthResponse(message);
-	            			System.out.println("2. auth response sent: " + authResponse + "\n");
+	            			//System.out.println("2. auth response sent: " + authResponse + "\n");
 	        		        output.write(authResponse + "\n");
 	        		    	output.flush();
 	        		    	break;
@@ -110,7 +110,7 @@ public class Server {
 	            	
 	            	String payload = doc.getString("payload");
 					String requestString = decryption(secretKey,payload);
-	            	System.out.println("3. command request received: " + requestString + "\n");
+	            	//System.out.println("3. command request received: " + requestString + "\n");
 	            	Document request = Document.parse(requestString);
 	            	ParseRequest(output, request, secretKey, server);
 
@@ -135,11 +135,11 @@ public class Server {
 						hostPorts = UDPPeerManager.getInstance().getConnectedPeers();
 					}
 					String listPeersResponse = ClientServerMessages.genListPeersResponse(hostPorts);
-					System.out.println("4.List peers response (raw): " + listPeersResponse + "\n");
+					//System.out.println("4.List peers response (raw): " + listPeersResponse + "\n");
 					String encryptListPeersResponse =encryption(secretKey, listPeersResponse);
-					System.out.println("5.List peers response (encrypted): " + encryptListPeersResponse);
+					//System.out.println("5.List peers response (encrypted): " + encryptListPeersResponse);
 					String payloadListPeersResponse = ClientServerMessages.genPayload(encryptListPeersResponse);
-					System.out.println("6.List peers response (payload): " + payloadListPeersResponse);
+					//System.out.println("6.List peers response (payload): " + payloadListPeersResponse);
 					output.write(payloadListPeersResponse + "\n");
 			    	output.flush();
 					break;
@@ -157,11 +157,11 @@ public class Server {
 							UDPPeerManager.getInstance().addPeer(datagramSocket,remoteHostPort.toString(),fileSystemManager);
 						} else {
 							connectPeerResponse = ClientServerMessages.genConnectPeerResponseFail(hostname, port);
-							System.out.println("4. connect peer response (raw): " + connectPeerResponse + "\n");
+							//System.out.println("4. connect peer response (raw): " + connectPeerResponse + "\n");
 							String encryptConnectPeerResponse = encryption(secretKey, connectPeerResponse);
-							System.out.println("5.connect peer response (encrypted): " + encryptConnectPeerResponse);
+							//System.out.println("5.connect peer response (encrypted): " + encryptConnectPeerResponse);
 							String payloadConnectPeerResponse = ClientServerMessages.genPayload(encryptConnectPeerResponse);
-							System.out.println("6.connect peer response (payload): " + payloadConnectPeerResponse);
+							//System.out.println("6.connect peer response (payload): " + payloadConnectPeerResponse);
 							output.write(payloadConnectPeerResponse + "\n");
 					    	output.flush();
 							return;
@@ -200,11 +200,11 @@ public class Server {
 							}
 						}
 					}
-					System.out.println("4. connect peer response (raw): " + connectPeerResponse + "\n");
+					//System.out.println("4. connect peer response (raw): " + connectPeerResponse + "\n");
 					String encryptConnectPeerResponse = encryption(secretKey, connectPeerResponse);
-					System.out.println("5.connect peer response (encrypted): " + encryptConnectPeerResponse);
+					//System.out.println("5.connect peer response (encrypted): " + encryptConnectPeerResponse);
 					String payloadConnectPeerResponse = ClientServerMessages.genPayload(encryptConnectPeerResponse);
-					System.out.println("6.connect peer response (payload): " + payloadConnectPeerResponse);
+					//System.out.println("6.connect peer response (payload): " + payloadConnectPeerResponse);
 					output.write(payloadConnectPeerResponse + "\n");
 			    	output.flush();
 					break;
@@ -213,11 +213,11 @@ public class Server {
 					port = (int) request.getLong("port");
 					String disconnectPeerResponse = ClientServerMessages.genDisconnectPeerResponse(request.getString("host"),
 							port, datagramSocket);
-					System.out.println("4.Disconnect peer response (raw): " + disconnectPeerResponse + "\n");
+					//System.out.println("4.Disconnect peer response (raw): " + disconnectPeerResponse + "\n");
 					String encryptDisconnectPeersResponse = encryption(secretKey, disconnectPeerResponse);
-					System.out.println("5.Disconnect peer response (encrypted): " + encryptDisconnectPeersResponse);
+					//System.out.println("5.Disconnect peer response (encrypted): " + encryptDisconnectPeersResponse);
 					String payloadDisconnectPeerResponse = ClientServerMessages.genPayload(encryptDisconnectPeersResponse);
-					System.out.println("6.Disconnect peer response (payload): " + payloadDisconnectPeerResponse);
+					//System.out.println("6.Disconnect peer response (payload): " + payloadDisconnectPeerResponse);
 					output.write(payloadDisconnectPeerResponse + "\n");
 			    	output.flush();
 					break;
@@ -322,7 +322,7 @@ public class Server {
 			cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyBytes, "AES"), new IvParameterSpec(iv));
 			byte[] plainText = cipher.doFinal(cipherText);
 			//System.out.println(Base64.getEncoder().encodeToString(plainText));
-			System.out.println(new String(plainText));
+			//System.out.println(new String(plainText));
 			return new String(plainText);
 		} catch (InvalidKeyException | NoSuchAlgorithmException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException e) {
 			System.out.println("Error while decrypting: " + e.toString());

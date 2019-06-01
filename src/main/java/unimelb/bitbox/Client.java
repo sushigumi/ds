@@ -30,201 +30,222 @@ import java.util.Base64;
 
 public class Client {
 
- public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws Exception {
   
-  //Object that will store the parsed command line arguments
-  CmdLineArgs argsCommand = new CmdLineArgs();
+		//Object that will store the parsed command line arguments
+		CmdLineArgs argsCommand = new CmdLineArgs();
   
-  //Parser provided by args4j
-  CmdLineParser parser = new CmdLineParser(argsCommand);
-  try {
+		//Parser provided by args4j
+		CmdLineParser parser = new CmdLineParser(argsCommand);
+		try {
    
-   //Parse the arguments
-   parser.parseArgument(args);
+			//Parse the arguments
+			parser.parseArgument(args);
    
-   //what if the input argument is invalid, e.g., it should be ip:port, actually it is a bunch of characters
-   HostPort serverHostPort = new HostPort(argsCommand.getServerHostPort());
+			HostPort serverHostPort = new HostPort(argsCommand.getServerHostPort());
    
-   try (Socket socket = new Socket(serverHostPort.host, serverHostPort.port);){
-
+			try (Socket socket = new Socket(serverHostPort.host, serverHostPort.port);){
+	   
     
-    BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
-    BufferedWriter output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
+				BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+				BufferedWriter output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
 
        
-       //ask to be authorized
-    String authRequest = ClientServerMessages.genAuthRequest(argsCommand.getIdentity());
-    System.out.print("1.authRequest sent: " + authRequest + "\n");
-          output.write(authRequest + "\n");
-       output.flush();
+				//ask to be authorized
+				String authRequest = ClientServerMessages.genAuthRequest(argsCommand.getIdentity());
+				System.out.print("1.authRequest sent: " + authRequest + "\n");
+				output.write(authRequest + "\n");
+				output.flush();
        
-       //read auth_response from server and get secret key
-       String response = input.readLine();
-       System.out.println("2.authResponse received: " + response + "\n");
-       Document authResponse = Document.parse(response);
+				//read auth_response from server and get secret key
+				String response = input.readLine();
+				System.out.println("2.authResponse received: " + response + "\n");
+				Document authResponse = Document.parse(response);
        
-       if(authResponse.getBoolean("status")) {
+				if(authResponse.getBoolean("status")) {
         
-        String message = authResponse.getString("AES128");
-        byte[] secretKey = DecryptSecretKey(message);
+					String message = authResponse.getString("AES128");
+					byte[] secretKey = DecryptSecretKey(message);
         
-        //Execute the specified command
-        ParseCommand(output, argsCommand, secretKey);
+					//Execute the specified command
+					ParseCommand(output, argsCommand, secretKey);
         
-        //As long as receiving a message,close the socket
-        String commandResponse = input.readLine();
-     System.out.println("3. commandResponse Received: " + commandResponse);
-        if(commandResponse != null && !commandResponse.isEmpty()) {
+					//As long as receiving a message,close the socket
+					String commandResponse = input.readLine();
+					System.out.println("4. commandResponse received: " + commandResponse);
+        
+					Document doc = Document.parse(commandResponse);
+					if (doc.containsKey("payload")) {
+     	
+						String payload = doc.getString("payload");
+						String commandString = decryption(secretKey,payload);
+						System.out.println(commandString);
+			
+					}
+					socket.close();
          
-         socket.close();
-         
-        }
-       }   
-   } catch (UnknownHostException e) {
-    e.printStackTrace();
-   } catch (IOException e) {
-    e.printStackTrace();
-   } 
-  } catch (CmdLineException e) {
-   System.err.println(e.getMessage());
-   //Print the usage to help the user understand the arguments expected
-   //by the program
-   parser.printUsage(System.err);
-  }
- }
-  
- private static void ParseCommand(BufferedWriter output, CmdLineArgs argsCommand, byte[] secretKey) throws IOException {
-  
-  switch(argsCommand.getCommandName()){
-  
-   case "list_peers": 
-    String listPeersRequest = ClientServerMessages.genListPeersRequest();
-    String encryptListPeerRequest = encryption(secretKey, listPeersRequest);
-    String payloadListPeerRequest = ClientServerMessages.genPayload(encryptListPeerRequest);
-    output.write(payloadListPeerRequest + "\n");
-    System.out.println("3.send list peer request: " + payloadListPeerRequest);
-       output.flush();
-       
-    break;
-    
-   case "connect_peer":
-    HostPort connectPeerHostPort = new HostPort(argsCommand.getPeerHostPort());
-    String connectPeerRequest = ClientServerMessages.genConnectPeerRequest(connectPeerHostPort);   
-    String encryptConnectPeerRequest = encryption(secretKey, connectPeerRequest);
-    String payloadConnectPeerRequest = ClientServerMessages.genPayload(encryptConnectPeerRequest);
-    System.out.println("3. connect request:" + payloadConnectPeerRequest + "\n");
-    output.write(payloadConnectPeerRequest + "\n");
-       output.flush();
-
-    break;
-    
-   case "disconnect_peer":
-    HostPort disconPeerHostPort = new HostPort(argsCommand.getPeerHostPort());
-    String disconnectPeerRequest = ClientServerMessages.genDisconnectPeerRequest(disconPeerHostPort);   
-    String encryptdisconnectPeerRequest = encryption(secretKey, disconnectPeerRequest);
-    String payloaddisconnectPeerRequest = ClientServerMessages.genPayload(encryptdisconnectPeerRequest);    
-    output.write(payloaddisconnectPeerRequest + "\n");
-       output.flush();
-    
-    break;
-    
-   default:
-    System.out.println("Invalid command!");
-    break;
-    
-  }
- }
+				}
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} catch (CmdLineException e) {
+			System.err.println(e.getMessage());
+			//Print the usage to help the user understand the arguments expected
+			//by the program
+			parser.printUsage(System.err);
+		}
+	}
  
-  private static byte[] DecryptSecretKey(String message)
-             throws Exception {
+  
+	private static void ParseCommand(BufferedWriter output, CmdLineArgs argsCommand, byte[] secretKey) throws IOException {
+  
+		switch(argsCommand.getCommandName()){
+  
+		case "list_peers": 
+			String listPeersRequest = ClientServerMessages.genListPeersRequest();
+			String encryptListPeerRequest = encryption(secretKey, listPeersRequest);
+			String payloadListPeerRequest = ClientServerMessages.genPayload(encryptListPeerRequest);
+			output.write(payloadListPeerRequest + "\n");
+			System.out.println("3. send list_peers request: " + payloadListPeerRequest);
+			output.flush();
+       
+			break;
+			
+		case "connect_peer":
+			HostPort connectPeerHostPort = new HostPort(argsCommand.getPeerHostPort());
+			String connectPeerRequest = ClientServerMessages.genConnectPeerRequest(connectPeerHostPort);   
+			String encryptConnectPeerRequest = encryption(secretKey, connectPeerRequest);
+			String payloadConnectPeerRequest = ClientServerMessages.genPayload(encryptConnectPeerRequest);
+			System.out.println("3. sent connect_peer request:" + payloadConnectPeerRequest + "\n");
+			output.write(payloadConnectPeerRequest + "\n");
+			output.flush();
+
+			break;
+    
+		case "disconnect_peer":
+			HostPort disconPeerHostPort = new HostPort(argsCommand.getPeerHostPort());
+			String disconnectPeerRequest = ClientServerMessages.genDisconnectPeerRequest(disconPeerHostPort);   
+			String encryptdisconnectPeerRequest = encryption(secretKey, disconnectPeerRequest);
+			String payloaddisconnectPeerRequest = ClientServerMessages.genPayload(encryptdisconnectPeerRequest);
+			System.out.println("3. sent disconnect_peer request:" + payloaddisconnectPeerRequest + "\n");
+			output.write(payloaddisconnectPeerRequest + "\n");
+			output.flush();
+    
+			break;
+    
+		default:
+			System.out.println("Invalid command!");
+			break;
+    
+		}
+	}
+ 
+	private static byte[] DecryptSecretKey(String message)
+	             throws Exception {
    
-    byte[] secretKey = Base64.getDecoder().decode(message);
-    byte[] privateKey = getPrivateKey("bitboxclient_rsa");
-    if (privateKey == null) {
-     System.out.println("error getting private key");
-     System.exit(2);
-   }
-         PrivateKey key = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(privateKey));
-         Cipher cipher = Cipher.getInstance("RSA");
-         cipher.init(Cipher.DECRYPT_MODE, key);
-         byte[] decryptedBytes = cipher.doFinal(secretKey);
+		byte[] secretKey = Base64.getDecoder().decode(message);
+		byte[] privateKey = getPrivateKey("bitboxclient_rsa");
+		if (privateKey == null) {
+			System.out.println("error getting private key");
+			System.exit(2);
+		}
+		PrivateKey key = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(privateKey));
+		Cipher cipher = Cipher.getInstance("RSA");
+	    cipher.init(Cipher.DECRYPT_MODE, key);
+	    byte[] decryptedBytes = cipher.doFinal(secretKey);
 
-         return decryptedBytes;
-     }
+	  return decryptedBytes;
+   }
   
   
-  private static byte[] getPrivateKey(String filename) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, URISyntaxException { 
-//  File file = new File(filename);
-//  FileInputStream fis = new FileInputStream(file);
-//  DataInputStream dis = new DataInputStream(fis);
-//  byte[] keyBytes = new byte[(int) file.length()];
-//  dis.readFully(keyBytes);
-//  dis.close();
-//
-//  PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
-//  KeyFactory kf = KeyFactory.getInstance("RSA");
-//
-//  return kf.generatePrivate(keySpec).getEncoded();
-   Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+	private static byte[] getPrivateKey(String filename) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, URISyntaxException { 
 
-   File privateKeyFile = new File(filename); // private key file in PEM format
-   PEMParser pemParser = new PEMParser(new FileReader(privateKeyFile));
-   Object object = pemParser.readObject();
-   PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder().build("".toCharArray());
-   JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
-   KeyPair kp;
-   if (object instanceof PEMEncryptedKeyPair) {
-    System.out.println("Encrypted key - we will use provided password");
-    kp = converter.getKeyPair(((PEMEncryptedKeyPair) object).decryptKeyPair(decProv));
-   } else {
-    System.out.println("Unencrypted key - no password needed");
-    kp = converter.getKeyPair((PEMKeyPair) object);
-   }
+		  Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
-   return kp.getPrivate().getEncoded();
-  }
+		  File privateKeyFile = new File(filename); // private key file in PEM format
+		  PEMParser pemParser = new PEMParser(new FileReader(privateKeyFile));
+		  Object object = pemParser.readObject();
+		  PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder().build("".toCharArray());
+		  JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+		  KeyPair kp;
+		  if (object instanceof PEMEncryptedKeyPair) {
+			  System.out.println("Encrypted key - we will use provided password");
+			  kp = converter.getKeyPair(((PEMEncryptedKeyPair) object).decryptKeyPair(decProv));
+		  } else {
+			  System.out.println("Unencrypted key - no password needed");
+			  kp = converter.getKeyPair((PEMKeyPair) object);
+		  }
+		  pemParser.close();
+		
+		  return kp.getPrivate().getEncoded();
+	}
 
 
  public static String encryption(byte[] keyBytes, String plainText) {
 
-  byte[] plaintTextByteArray = new byte[0];
-  try {
-   plaintTextByteArray = plainText.getBytes("UTF8");
-  } catch (UnsupportedEncodingException e) {
-   e.printStackTrace();
-  }
+	  byte[] plaintTextByteArray = new byte[0];
+	  try {
+		  plaintTextByteArray = plainText.getBytes("UTF8");
+	  } catch (UnsupportedEncodingException e) {
+		  e.printStackTrace();
+	  }
+	
+	  // generate IV
+	  SecureRandom secureRandom = new SecureRandom();
+	  byte[] iv = new byte[16]; //NEVER REUSE THIS IV WITH SAME KEY
+	  secureRandom.nextBytes(iv);
+	
+	  Cipher cipher = null;
+	  try {
+		  cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+	  } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+		  e.printStackTrace();
+	  }
+	
+	  try {
+		  cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"), new IvParameterSpec(iv));
+	  } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+		  e.printStackTrace();
+	  }
+	
+	  byte[] cipherText = new byte[0];
+	  try {
+		  cipherText = cipher.doFinal(plaintTextByteArray);
+	  } catch (IllegalBlockSizeException | BadPaddingException e) {
+		  e.printStackTrace();
+	  }
+	
+	  ByteBuffer byteBuffer = ByteBuffer.allocate(1 + iv.length + cipherText.length);
+	  byteBuffer.put((byte) iv.length);
+	  byteBuffer.put(iv);
+	  byteBuffer.put(cipherText);
+	  return Base64.getEncoder().encodeToString(byteBuffer.array());
+ 	}
 
-  // generate IV
-  SecureRandom secureRandom = new SecureRandom();
-  byte[] iv = new byte[16]; //NEVER REUSE THIS IV WITH SAME KEY
-  secureRandom.nextBytes(iv);
+ 	public static String decryption(byte[] keyBytes, String ciphermessage) {
 
-  Cipher cipher = null;
-  try {
-   cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-  } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-   e.printStackTrace();
-  }
+		byte[] cipherMessage = Base64.getDecoder().decode(ciphermessage);
+		try {
+			ByteBuffer byteBuffer = ByteBuffer.wrap(cipherMessage);
+			int ivLength = (byteBuffer.get() & 0xFF);
+			byte[] iv = new byte[ivLength];
+			byteBuffer.get(iv);
 
-  try {
-   cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"), new IvParameterSpec(iv));
-  } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
-   e.printStackTrace();
-  }
+			byte[] cipherText = new byte[byteBuffer.remaining()];
+			byteBuffer.get(cipherText);
 
-  byte[] cipherText = new byte[0];
-  try {
-   cipherText = cipher.doFinal(plaintTextByteArray);
-  } catch (IllegalBlockSizeException | BadPaddingException e) {
-   e.printStackTrace();
-  }
-
-  ByteBuffer byteBuffer = ByteBuffer.allocate(1 + iv.length + cipherText.length);
-  byteBuffer.put((byte) iv.length);
-  byteBuffer.put(iv);
-  byteBuffer.put(cipherText);
-  return Base64.getEncoder().encodeToString(byteBuffer.array());
- }
-
-
+			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+			cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyBytes, "AES"), new IvParameterSpec(iv));
+			byte[] plainText = cipher.doFinal(cipherText);
+			return new String(plainText);
+		} catch (InvalidKeyException | NoSuchAlgorithmException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException e) {
+			System.out.println("Error while decrypting: " + e.toString());
+		} catch (InvalidAlgorithmParameterException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 }
+
