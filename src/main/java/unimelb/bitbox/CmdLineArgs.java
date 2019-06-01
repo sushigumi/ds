@@ -19,7 +19,7 @@ public class CmdLineArgs {
 	@Option(required = false, name = "-p", usage = "HostPort")
 	private String peerhostport;
 
-	@Option(required = false, name = "-i", usage = "identity")
+	@Option(required = true, name = "-i", usage = "identity")
 	private String identity;
 
 	public String getCommandName() {
