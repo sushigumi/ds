@@ -2,14 +2,18 @@ package unimelb.bitbox.eventprocess;
 
 import unimelb.bitbox.ServerMain;
 import unimelb.bitbox.messages.Messages;
+import unimelb.bitbox.peer.UDPPeer;
 import unimelb.bitbox.util.Document;
 import unimelb.bitbox.util.FileSystemManager;
 import unimelb.bitbox.util.HostPort;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
@@ -25,9 +29,9 @@ public class FileModifyResponse extends EventProcess {
 		this.fileSystemManager = fileSystemManager;
 	}
 
-	public FileModifyResponse(DatagramSocket socket, HostPort hostPort,
+	public FileModifyResponse(DatagramSocket socket, HostPort hostPort, UDPPeer peer,
 							  Document received, FileSystemManager fileSystemManager) {
-		super(socket, hostPort);
+		super(socket, hostPort, peer);
 		this.received = received;
 		this.fileSystemManager = fileSystemManager;
 	}
@@ -64,7 +68,7 @@ public class FileModifyResponse extends EventProcess {
 
 						ArrayList<String> messages = Messages.genFileBytesRequests(fileDescriptor, pathName);
 						for (String message : messages) {
-							sendMessage(message);
+							sendMessageFileBytes(message);
 						}
 
 					}
@@ -84,12 +88,52 @@ public class FileModifyResponse extends EventProcess {
 				doc.append("message", "file loader already in progress");
 				doc.append("status", false);
 				sendMessage(doc.toJson());
-				e.printStackTrace();
 			} catch (IOException e) {
 				doc.append("message", "error creating file loader");
 				doc.append("status", false);
 				sendMessage(doc.toJson());
-				e.printStackTrace();
+			}
+		}
+	}
+
+	public void sendMessageFileBytes(String message) {
+		if (ServerMain.getMode().equals(ServerMain.MODE_TCP)) {
+			super.sendMessage(message);
+		}
+		// UDP is different because it should not send back for the file create response runnable
+		// Instead submit the file bytes request
+		else {
+			// Convert the message to a bytes buffer before sending to the other peer
+			message = message + "\n";
+			byte[] buf;
+			try {
+				buf = message.getBytes("UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				log.severe("unsupported encoding");
+				return;
+			}
+			//System.out.println(message);
+			DatagramPacket packet;
+			try {
+				packet = new DatagramPacket(buf, buf.length, InetAddress.getByName(hostPort.host), hostPort.port);
+			} catch (UnknownHostException e) {
+				log.severe(e.getMessage());
+				return;
+			}
+//                System.out.println(packet.getLength());
+//                System.out.println(new String(packet.getData()));
+			//System.out.println(packet.getAddress() + "," + packet.getPort());
+			try {
+				socket.send(packet);
+			} catch (IOException e) {
+				log.severe("io error occurred.");
+			}
+
+			// Insert a retry only for requests sent
+			if (peer != null) {
+				Document doc = Document.parse(message);
+				peer.queueRetry(new FileBytesRequest(socket, hostPort, doc, peer),
+						doc);
 			}
 		}
 	}

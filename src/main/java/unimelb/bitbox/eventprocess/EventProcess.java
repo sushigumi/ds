@@ -19,9 +19,9 @@ public abstract class EventProcess implements Runnable {
 
     private BufferedWriter writer = null;
 
-    private DatagramSocket socket = null;
-    private HostPort hostPort = null;
-    private UDPPeer peer = null;
+    DatagramSocket socket = null;
+    HostPort hostPort = null;
+    UDPPeer peer = null;
 
     public EventProcess(BufferedWriter writer) {
         this.mode = ServerMain.MODE_TCP;
@@ -75,7 +75,7 @@ public abstract class EventProcess implements Runnable {
             }
 
         } catch (IOException e) {
-            log.severe("error writing message to peer");
+            log.severe("error writing message to peer. " + e.getMessage());
         }
         catch (Exception e) {
             log.severe(e.getMessage());

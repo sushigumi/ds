@@ -20,6 +20,7 @@ import java.util.ArrayList;
 public class FileBytesRequest extends EventProcess {
     private Document fileDescriptor;
     private String pathName;
+    private long position;
 
     public FileBytesRequest(BufferedWriter output, Document fileDescriptor, String pathName) {
         super(output);
@@ -27,18 +28,22 @@ public class FileBytesRequest extends EventProcess {
         this.pathName = pathName;
     }
 
-    public FileBytesRequest(DatagramSocket socket, HostPort hostPort, Document fileDescriptor, String pathName, UDPPeer peer) {
+    public FileBytesRequest(DatagramSocket socket, HostPort hostPort, Document doc, UDPPeer peer) {
         super(socket, hostPort, peer);
-        this.fileDescriptor = fileDescriptor;
-        this.pathName = pathName;
+        this.fileDescriptor = (Document) doc.get("fileDescriptor");
+        this.pathName = doc.getString("pathName");
+        this.position = doc.getLong("position");
     }
 
     @Override
     public void run() {
-        ArrayList<String> messages = Messages.genFileBytesRequests(fileDescriptor, pathName);
+//        ArrayList<String> messages = Messages.genFileBytesRequests(fileDescriptor, pathName);
+//
+//        for (String message : messages) {
+//            sendMessage(message);
+//        }
 
-        for (String message : messages) {
-            sendMessage(message);
-        }
+        String message = Messages.genFileBytesRequest(fileDescriptor, pathName, position);
+        sendMessage(message);
     }
 }

@@ -115,7 +115,7 @@ public class Messages {
 
         if(!fileSystemManager.dirNameExists(pathName)){
             doc.append("message", "pathname does not exist");
-            doc.append("status", true);
+            doc.append("status", false);
         }
         else if(!fileSystemManager.isSafePathName(pathName)){
             doc.append("message", "unsafe pathname given");
@@ -239,7 +239,7 @@ public class Messages {
         doc.append("fileDescriptor", fileDescriptor);
         doc.append("pathName", pathName);
         doc.append("position", position);
-        doc.append("length", blockSize);
+        doc.append("length", blockSize < 8192 ? blockSize : 8192);
 
         return doc.toJson();
     }
